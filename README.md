@@ -1,8 +1,26 @@
-# Orb
+<p align="center">
+  <img src="media/live-build.gif" width="840" alt="Typing five lines of Orb in the playground: the animated video builds on the right as each line appears, then a colour, a font and an image are changed live">
+</p>
 
-A small language that AI models write to make videos, presentations and interactive animations.
+<h1 align="center">Orb</h1>
 
-**Try it in your browser, nothing to install: https://www.kartit.net/orb/**
+<p align="center"><b>A small language AI models write to make videos, presentations and interactive animations.</b><br>
+A few readable lines in. A video, a deck or an interactive page out.</p>
+
+<p align="center">
+  <a href="https://www.kartit.net/orb/"><b>▶ Try the playground</b></a> &nbsp;·&nbsp;
+  <a href="#install">Install</a> &nbsp;·&nbsp;
+  <a href="#for-ai-agents">Use it from your AI agent</a> &nbsp;·&nbsp;
+  <a href="docs/SPEC.md">The whole language on one page</a>
+</p>
+
+<p align="center">
+  <img alt="20x fewer tokens than GSAP on six briefs" src="https://img.shields.io/badge/tokens-20x%20fewer%20than%20GSAP-22c55e">
+  <img alt="134 tests passing" src="https://img.shields.io/badge/tests-134%20passing-22c55e">
+  <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue">
+</p>
+
+The recording above is real: five lines typed into the [playground](https://www.kartit.net/orb/), nothing staged.
 
 ```
 motion "Launch week" accent=#22c55e
@@ -14,6 +32,15 @@ motion "Launch week" accent=#22c55e
 
 That is the whole file. `orb build` turns it into one interactive page, `orb render` into an MP4.
 Change `accent=`, add `font=display` or `mode=light`, and the whole design follows.
+
+## What you can make
+
+| A slide deck, 49 lines | A new chart, written in Orb itself |
+|---|---|
+| <img src="media/deck.jpg" alt="A slide deck with its Orb source scrolling beside it"> | <img src="media/chart.jpg" alt="A bar chart defined in 18 lines of Orb, used with one line"> |
+
+Animated charts and counters, kinetic captions, click-through decks, characters with moods and state machines
+that react to hover and click, and full videos with footage, voice-anchored timing and captions.
 
 ## Why
 
@@ -32,6 +59,8 @@ cl100k; sources and data in [`benchmark/`](benchmark)):
 | anime.js v4 | 23,978 | 23.4x |
 
 For the first brief (a 10 second data video): 12 lines of Orb against 193 (GSAP), 202 (plain) and 209 (anime.js).
+
+<p align="center"><img src="media/four-ways.jpg" width="760" alt="The same video written four ways: 202, 193 and 209 lines against 12 lines of Orb"></p>
 
 What that number does and does not mean:
 
