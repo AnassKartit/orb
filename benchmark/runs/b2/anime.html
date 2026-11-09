@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sprint 24</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0f1a; --card: #131a2b; --line: #26314a;
+    --text: #f2f5fb; --muted: #8b97b2;
+    --accent: #ffb547; --blue: #4f8cff; --violet: #8b6bff; --green: #3ddc97;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #05070d; }
+  body { display: flex; align-items: center; justify-content: center; overflow: hidden;
+    font-family: Inter, "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; color: var(--text); }
+  #stage { position: relative; width: 1280px; height: 720px; flex: none; overflow: hidden;
+    background: radial-gradient(900px 500px at 20% 0%, #17223d 0%, transparent 60%),
+                radial-gradient(800px 500px at 100% 100%, #1d1740 0%, transparent 60%), var(--bg); }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  h1 { font-size: 150px; font-weight: 800; letter-spacing: -4px; line-height: 1;
+    background: linear-gradient(90deg, #fff, #9db8ff 60%, #b9a5ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { margin-top: 28px; font-size: 38px; color: var(--muted); letter-spacing: 6px; text-transform: uppercase; font-weight: 500; }
+  .rule { width: 120px; height: 5px; border-radius: 3px; background: var(--accent); margin-top: 36px; transform-origin: left; }
+  .kicker { position: absolute; top: 48px; left: 80px; font-size: 20px; letter-spacing: 5px; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+  .kicker b { color: var(--accent); }
+
+  /* scene 2 */
+  .big { position: absolute; top: 90px; left: 0; right: 0; text-align: center; }
+  .big .lbl { font-size: 30px; color: var(--muted); letter-spacing: 4px; text-transform: uppercase; font-weight: 600; }
+  .big .num { font-size: 190px; font-weight: 800; line-height: 1; letter-spacing: -6px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .bars { position: absolute; left: 280px; right: 280px; top: 440px; height: 220px; display: flex; gap: 32px; align-items: flex-end; border-bottom: 2px solid var(--line); }
+  .col { flex: 1; height: 100%; position: relative; display: flex; align-items: flex-end; justify-content: center; }
+  .bar { width: 100%; border-radius: 10px 10px 0 0; background: linear-gradient(180deg, #5b86d6, #34508a); transform-origin: bottom; transform: scaleY(0); }
+  .bar.hi { background: linear-gradient(180deg, #ffd27d, var(--accent)); box-shadow: 0 0 0 rgba(255,181,71,0); }
+  .val { position: absolute; width: 100%; text-align: center; font-size: 26px; font-weight: 700; opacity: 0; }
+  .day { position: absolute; bottom: -38px; width: 100%; text-align: center; font-size: 20px; color: var(--muted); font-weight: 600; letter-spacing: 2px; }
+
+  /* scene 3 */
+  .card { position: absolute; top: 120px; height: 520px; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px 32px; opacity: 0; }
+  .card h2 { font-size: 22px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  #c1 { left: 80px; width: 640px; }
+  #c2 { left: 756px; width: 444px; }
+  svg { display: block; overflow: visible; }
+  .legend { position: absolute; left: 32px; right: 32px; bottom: 28px; display: flex; flex-direction: column; gap: 12px; }
+  .li { display: flex; align-items: center; font-size: 24px; opacity: 0; }
+  .li i { width: 16px; height: 16px; border-radius: 5px; margin-right: 14px; }
+  .li span { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .ship { font-size: 220px; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <div class="scene center" id="s1">
+    <h1 id="t1">Sprint 24</h1>
+    <div class="sub" id="t2">Shipped on time</div>
+    <div class="rule" id="t3"></div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div class="kicker">Sprint 24 &middot; <b>Velocity</b></div>
+    <div class="big">
+      <div class="lbl">Story points</div>
+      <div class="num" id="counter">0</div>
+    </div>
+    <div class="bars" id="bars"></div>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="kicker">Sprint 24 &middot; <b>Progress</b></div>
+    <div class="card" id="c1">
+      <h2>Burndown</h2>
+      <svg id="burn" width="576" height="420" viewBox="0 0 576 420" style="margin-top:12px">
+        <defs>
+          <linearGradient id="fillg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#4f8cff" stop-opacity=".35"/>
+            <stop offset="1" stop-color="#4f8cff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <g id="grid"></g>
+        <path id="area" fill="url(#fillg)" opacity="0"/>
+        <path id="lp" fill="none" stroke="#6ea0ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        <g id="dots"></g>
+      </svg>
+    </div>
+    <div class="card" id="c2">
+      <h2>Ticket status</h2>
+      <svg width="260" height="260" viewBox="0 0 260 260" style="margin:14px auto 0">
+        <circle cx="130" cy="130" r="95" fill="none" stroke="#1d2740" stroke-width="34"/>
+        <circle class="seg" cx="130" cy="130" r="95" fill="none" stroke="#3ddc97" stroke-width="34" pathLength="100" data-len="68.5" transform="rotate(-90 130 130)" stroke-dasharray="0 100"/>
+        <circle class="seg" cx="130" cy="130" r="95" fill="none" stroke="#ffb547" stroke-width="34" pathLength="100" data-len="18.5" transform="rotate(162 130 130)" stroke-dasharray="0 100"/>
+        <circle class="seg" cx="130" cy="130" r="95" fill="none" stroke="#8b6bff" stroke-width="34" pathLength="100" data-len="8.5" transform="rotate(234 130 130)" stroke-dasharray="0 100"/>
+        <text id="pct" x="130" y="128" text-anchor="middle" font-size="54" font-weight="800" fill="#f2f5fb">0%</text>
+        <text x="130" y="156" text-anchor="middle" font-size="16" letter-spacing="3" fill="#8b97b2">DONE</text>
+      </svg>
+      <div class="legend">
+        <div class="li"><i style="background:#3ddc97"></i>Done<span>70</span></div>
+        <div class="li"><i style="background:#ffb547"></i>Review<span>20</span></div>
+        <div class="li"><i style="background:#8b6bff"></i>Todo<span>10</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene center" id="s4">
+    <h1 class="ship" id="ship">Ship it</h1>
+    <div class="rule" id="r4" style="margin-top:40px"></div>
+  </div>
+
+</div>
+
+<script type="module">
+import { animate, createTimeline, stagger, createDrawable, createSpring, utils } from 'https://cdn.jsdelivr.net/npm/animejs@4/+esm';
+
+const NS = 'http://www.w3.org/2000/svg';
+
+/* ---- build bar chart ---- */
+const pts = [12, 20, 17, 24, 13];
+const days = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+const barsEl = document.getElementById('bars');
+pts.forEach((v, i) => {
+  const col = document.createElement('div');
+  col.className = 'col';
+  const h = Math.round(v / 24 * 190);
+  col.innerHTML = `<div class="bar${v === 24 ? ' hi' : ''}" style="height:${h}px"></div>` +
+    `<div class="val" style="bottom:${h + 8}px;${v === 24 ? 'color:#ffb547' : ''}">${v}</div>` +
+    `<div class="day">${days[i]}</div>`;
+  barsEl.appendChild(col);
+});
+
+/* ---- build burndown ---- */
+const data = [40, 34, 29, 22, 15, 9, 0];
+const X0 = 40, DX = 80, Y0 = 20, H = 330;
+const P = data.map((v, i) => [X0 + i * DX, Y0 + (1 - v / 40) * H]);
+let d = `M${P[0][0]},${P[0][1]}`;
+for (let i = 0; i < P.length - 1; i++) {
+  const p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2;
+  const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+  const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+  d += ` C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]}`;
+}
+document.getElementById('lp').setAttribute('d', d);
+document.getElementById('area').setAttribute('d', d + ` L${P[6][0]},${Y0 + H} L${P[0][0]},${Y0 + H} Z`);
+const grid = document.getElementById('grid');
+[0, 10, 20, 30, 40].forEach(v => {
+  const y = Y0 + (1 - v / 40) * H;
+  grid.insertAdjacentHTML('beforeend',
+    `<line x1="${X0}" x2="${X0 + 6 * DX}" y1="${y}" y2="${y}" stroke="#26314a" stroke-width="1.5"/>` +
+    `<text x="${X0 - 12}" y="${y + 5}" text-anchor="end" font-size="15" fill="#8b97b2">${v}</text>`);
+});
+const dots = document.getElementById('dots');
+P.forEach((p, i) => {
+  dots.insertAdjacentHTML('beforeend',
+    `<circle class="dot" cx="${p[0]}" cy="${p[1]}" r="8" fill="#0b0f1a" stroke="#6ea0ff" stroke-width="4" style="opacity:0"/>` +
+    `<text x="${p[0]}" y="${Y0 + H + 32}" text-anchor="middle" font-size="15" fill="#8b97b2">D${i + 1}</text>`);
+});
+
+/* ---- timeline (10 s) ---- */
+const counter = { v: 0 };
+const pct = { v: 0 };
+const out = (sel, t) => ({ targets: sel, t });
+const tl = createTimeline({ defaults: { ease: 'outCubic' } });
+
+// Scene 1: 0 - 2.0s
+tl.set('#s1', { opacity: 1 }, 0)
+  .add('#t1', { opacity: [0, 1], translateY: [40, 0], scale: [0.94, 1], duration: 900, ease: 'outExpo' }, 150)
+  .add('#t2', { opacity: [0, 1], translateY: [20, 0], duration: 700 }, 650)
+  .add('#t3', { scaleX: [0, 1], duration: 700, ease: 'outExpo' }, 900)
+  .add('#s1', { opacity: 0, translateY: -30, duration: 450, ease: 'inCubic' }, 1850)
+
+// Scene 2: 2.3 - 5.0s
+  .set('#s2', { opacity: 1 }, 2300)
+  .add('#s2 .kicker', { opacity: [0, 1], translateX: [-20, 0], duration: 500 }, 2300)
+  .add('#s2 .lbl', { opacity: [0, 1], translateY: [16, 0], duration: 500 }, 2350)
+  .add('#s2 .num', { opacity: [0, 1], translateY: [24, 0], duration: 600 }, 2400)
+  .add(counter, { v: 86, duration: 1700, ease: 'outExpo',
+    onUpdate: () => { document.getElementById('counter').textContent = Math.round(counter.v); } }, 2500)
+  .add('.bar', { scaleY: [0, 1], duration: 800, delay: stagger(90), ease: 'outExpo' }, 2800)
+  .add('.day', { opacity: [0, 1], duration: 500, delay: stagger(90) }, 2900)
+  .add('.val', { opacity: [0, 1], translateY: [10, 0], duration: 450, delay: stagger(90) }, 3500)
+  .add('.bar.hi', { boxShadow: '0 0 50px rgba(255,181,71,0.65)', scaleX: [1, 1.08], duration: 600, ease: 'outCubic' }, 4000)
+  .add('#s2', { opacity: 0, translateY: -30, duration: 450, ease: 'inCubic' }, 4950)
+
+// Scene 3: 5.3 - 8.0s
+  .set('#s3', { opacity: 1 }, 5300)
+  .add('#s3 .kicker', { opacity: [0, 1], translateX: [-20, 0], duration: 500 }, 5300)
+  .add('#c1', { opacity: [0, 1], translateY: [40, 0], duration: 700, ease: 'outExpo' }, 5350)
+  .add('#c2', { opacity: [0, 1], translateY: [40, 0], duration: 700, ease: 'outExpo' }, 5500)
+  .add(createDrawable('#lp'), { draw: ['0 0', '0 1'], duration: 1500, ease: 'inOutQuad' }, 5800)
+  .add('#area', { opacity: [0, 1], duration: 900 }, 6500)
+  .add('.dot', { opacity: [0, 1], scale: [0, 1], duration: 400, delay: stagger(200), ease: createSpring({ stiffness: 220, damping: 14 }) }, 5900)
+  .add('.seg', { strokeDasharray: (el) => ['0 100', `${el.dataset.len} 100`], duration: 1100, delay: stagger(250), ease: 'outCubic' }, 5900)
+  .add(pct, { v: 70, duration: 1200, ease: 'outCubic',
+    onUpdate: () => { document.getElementById('pct').textContent = Math.round(pct.v) + '%'; } }, 5900)
+  .add('.li', { opacity: [0, 1], translateX: [20, 0], duration: 500, delay: stagger(130) }, 6600)
+  .add('#s3', { opacity: 0, translateY: -30, duration: 450, ease: 'inCubic' }, 7850)
+
+// Scene 4: 8.3 - 10s
+  .set('#s4', { opacity: 1 }, 8300)
+  .add('#ship', { opacity: [0, 1], scale: [0.7, 1], translateY: [30, 0], duration: 1100, ease: createSpring({ stiffness: 140, damping: 14 }) }, 8300)
+  .add('#r4', { scaleX: [0, 1], duration: 700, ease: 'outExpo' }, 8700);
+</script>
+</body>
+</html>

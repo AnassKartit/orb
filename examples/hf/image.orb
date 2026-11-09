@@ -1,0 +1,2 @@
+motion "Image" 640x360 2s
+  image "assets/card.svg" fit=contain dur=2 in=fade

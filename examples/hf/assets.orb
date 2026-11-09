@@ -1,0 +1,3 @@
+motion "Asset root" 1080x600 2s assets=assets
+  image "card.svg" at=0 box=200,100,680,400
+    punch at=0.5 dur=0.4 scale=1.1

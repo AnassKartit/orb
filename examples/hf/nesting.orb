@@ -1,0 +1,7 @@
+motion "Nested boxes" 1080x600 3s
+  group at=0 box=200,100,680,400
+    rect at=0 color=#334155
+    group at=0.3 dur=2.7 box=80,80,500,220
+      rect at=0 color=#7c5cff
+      text "Relative" at=0 box=20,50,460,120 size=64 align=center
+        pop at=0 dur=0.5

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Energy Use</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; background: #050a08; overflow: hidden; }
+  #wrap { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: 0 0; }
+  #stage {
+    position: relative; width: 1280px; height: 720px; overflow: hidden;
+    background: radial-gradient(900px 600px at 20% 10%, #12302a 0%, #0b1613 55%, #070d0b 100%);
+    font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #eaf4ef;
+  }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  h1 { margin: 0; font-size: 116px; font-weight: 800; letter-spacing: -2px; }
+  h1 .acc { color: #3ddc97; }
+  .sub { margin-top: 18px; font-size: 40px; font-weight: 500; color: #9fc4b5; letter-spacing: 1px; }
+  .rule { width: 120px; height: 5px; border-radius: 3px; background: #3ddc97; margin-top: 34px; transform-origin: 50% 50%; }
+  .kicker { position: absolute; font-size: 22px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: #6f9a8a; }
+  .big { position: absolute; left: 100px; top: 70px; }
+  .big .lbl { font-size: 28px; font-weight: 600; color: #9fc4b5; letter-spacing: 3px; text-transform: uppercase; }
+  .big .num { font-size: 130px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; color: #3ddc97; }
+  .big .num small { font-size: 40px; font-weight: 600; color: #9fc4b5; margin-left: 12px; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  svg text { font-family: inherit; }
+  .legend { position: absolute; left: 790px; top: 520px; width: 400px; }
+  .legend .row { display: flex; align-items: center; margin-bottom: 14px; font-size: 26px; opacity: 0; }
+  .legend .sw { width: 18px; height: 18px; border-radius: 5px; margin-right: 16px; }
+  .legend .nm { flex: 1; color: #d6e8df; }
+  .legend .pc { font-weight: 700; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+
+  <!-- Scene 1: title -->
+  <div class="scene center" id="s1">
+    <h1 id="t1">Energy <span class="acc">Use</span></h1>
+    <div class="sub" id="t1s">Down 12% this year</div>
+    <div class="rule" id="t1r"></div>
+  </div>
+
+  <!-- Scene 2: counter + bars -->
+  <div class="scene" id="s2">
+    <div class="big" id="bigbox">
+      <div class="lbl">Saved</div>
+      <div class="num"><span id="counter">0</span><small>kWh</small></div>
+    </div>
+    <div class="kicker" style="right:100px; top:96px;" id="k2">kWh per quarter</div>
+    <svg id="barsvg" width="1280" height="720"></svg>
+  </div>
+
+  <!-- Scene 3: line + donut -->
+  <div class="scene" id="s3">
+    <div class="kicker" style="left:100px; top:70px;" id="k3a">Renewable share, %</div>
+    <div class="kicker" style="left:790px; top:70px;" id="k3b">Consumption by source</div>
+    <svg id="s3svg" width="1280" height="720"></svg>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- Scene 4: closing -->
+  <div class="scene center" id="s4">
+    <h1 id="t4">Keep <span class="acc">going</span></h1>
+    <div class="rule" id="t4r"></div>
+  </div>
+
+</div></div>
+
+<script type="module">
+import { animate, createTimeline, stagger, createDrawable, createSpring, utils } from 'https://cdn.jsdelivr.net/npm/animejs@4/+esm';
+
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+
+/* fit stage to window */
+function fit() {
+  const s = Math.min(innerWidth / 1280, innerHeight / 720);
+  const w = document.getElementById('wrap');
+  w.style.transform = `translate(${-640 * s}px, ${-360 * s}px) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* ---------- Scene 2: bars ---------- */
+const kwh = [980, 910, 870, 800, 760, 720];
+const qs = ['Q1', 'Q2', 'Q3', 'Q4', 'Q1', 'Q2'];
+const bsvg = document.getElementById('barsvg');
+const base = 650, maxH = 300, bw = 118, gap = 36, x0 = (1280 - (6 * bw + 5 * gap)) / 2;
+el('line', { x1: x0 - 20, x2: x0 + 6 * bw + 5 * gap + 20, y1: base, y2: base, stroke: '#2a4a40', 'stroke-width': 2 }, bsvg);
+kwh.forEach((v, i) => {
+  const h = v / 980 * maxH, x = x0 + i * (bw + gap), low = i === 5;
+  const g = el('g', { class: 'bar' }, bsvg);
+  const r = el('rect', { x, y: base - h, width: bw, height: h, rx: 10, fill: low ? '#3ddc97' : '#2f6b5a' }, g);
+  r.style.transformBox = 'fill-box'; r.style.transformOrigin = '50% 100%'; r.style.transform = 'scaleY(0)';
+  r.classList.add('barrect');
+  const val = el('text', { x: x + bw / 2, y: base - h - 14, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 700, fill: low ? '#3ddc97' : '#cfe3da', opacity: 0 }, g);
+  val.textContent = v; val.classList.add('barval');
+  const q = el('text', { x: x + bw / 2, y: base + 36, 'text-anchor': 'middle', 'font-size': 24, 'font-weight': 600, fill: '#7fa597', opacity: 0 }, g);
+  q.textContent = qs[i]; q.classList.add('barq');
+  if (low) {
+    r.setAttribute('id', 'lowbar');
+    const tag = el('text', { x: x + bw / 2, y: base - h - 50, 'text-anchor': 'middle', 'font-size': 20, 'font-weight': 700, 'letter-spacing': 2, fill: '#0b1613', opacity: 0, id: 'lowtag' }, g);
+    tag.textContent = 'LOWEST';
+    const pill = el('rect', { x: x + bw / 2 - 52, y: base - h - 72, width: 104, height: 30, rx: 15, fill: '#3ddc97', opacity: 0, id: 'lowpill' }, g);
+    g.insertBefore(pill, tag);
+    tag.setAttribute('y', base - h - 51);
+  }
+});
+
+/* ---------- Scene 3: line + donut ---------- */
+const s3 = document.getElementById('s3svg');
+const share = [22, 28, 35, 41, 48, 55];
+const lx0 = 110, lx1 = 600, ly0 = 560, ly1 = 190; // y for 0 and 60
+const px = i => lx0 + i * (lx1 - lx0) / 5;
+const py = v => ly0 - v / 60 * (ly0 - ly1);
+[0, 20, 40, 60].forEach(v => {
+  el('line', { x1: lx0 - 30, x2: lx1 + 30, y1: py(v), y2: py(v), stroke: '#1c352d', 'stroke-width': 1.5 }, s3);
+  const t = el('text', { x: lx0 - 44, y: py(v) + 7, 'text-anchor': 'end', 'font-size': 20, fill: '#5d8576' }, s3);
+  t.textContent = v + '%';
+});
+qs.forEach((q, i) => {
+  const t = el('text', { x: px(i), y: ly0 + 42, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 600, fill: '#7fa597' }, s3);
+  t.textContent = q;
+});
+const P = share.map((v, i) => [px(i), py(v)]);
+let d = `M${P[0][0]},${P[0][1]}`;
+for (let i = 0; i < P.length - 1; i++) {
+  const p0 = P[Math.max(i - 1, 0)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(i + 2, P.length - 1)];
+  d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`;
+}
+const area = el('path', { d: d + ` L${P[5][0]},${ly0} L${P[0][0]},${ly0} Z`, fill: 'url(#ag)', opacity: 0, id: 'area' }, s3);
+const defs = el('defs', {}, s3);
+const lg = el('linearGradient', { id: 'ag', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+el('stop', { offset: '0%', 'stop-color': '#3ddc97', 'stop-opacity': 0.35 }, lg);
+el('stop', { offset: '100%', 'stop-color': '#3ddc97', 'stop-opacity': 0 }, lg);
+el('path', { d, id: 'line', fill: 'none', stroke: '#3ddc97', 'stroke-width': 6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s3);
+P.forEach((p, i) => {
+  const c = el('circle', { class: 'dot', cx: p[0], cy: p[1], r: 9, fill: '#0b1613', stroke: '#3ddc97', 'stroke-width': 4, opacity: 0 }, s3);
+  c.style.transformBox = 'fill-box'; c.style.transformOrigin = '50% 50%';
+  const t = el('text', { class: 'dlbl', x: p[0], y: p[1] - 22, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 700, fill: '#eaf4ef', opacity: 0 }, s3);
+  t.textContent = share[i] + '%';
+});
+
+/* donut */
+const cx = 990, cy = 330, R = 120, SW = 46;
+const src = [['Solar', 38, '#f5b841'], ['Wind', 32, '#5bc0eb'], ['Grid', 30, '#8a6fe0']];
+el('circle', { cx, cy, r: R, fill: 'none', stroke: '#14261f', 'stroke-width': SW }, s3);
+let acc = 0;
+src.forEach(([n, v, col]) => {
+  const rot = -90 + acc * 3.6;
+  const c = el('circle', { class: 'seg', cx, cy, r: R, fill: 'none', stroke: col, 'stroke-width': SW, pathLength: 1, transform: `rotate(${rot} ${cx} ${cy})` }, s3);
+  acc += v;
+});
+const dc = el('text', { x: cx, y: cy - 2, 'text-anchor': 'middle', 'font-size': 40, 'font-weight': 800, fill: '#eaf4ef', opacity: 0, id: 'dc1' }, s3);
+dc.textContent = '100%';
+const dc2 = el('text', { x: cx, y: cy + 28, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 600, 'letter-spacing': 2, fill: '#7fa597', opacity: 0, id: 'dc2' }, s3);
+dc2.textContent = 'ENERGY MIX';
+document.getElementById('legend').innerHTML = src.map(([n, v, c]) =>
+  `<div class="row"><span class="sw" style="background:${c}"></span><span class="nm">${n}</span><span class="pc">${v}%</span></div>`).join('');
+
+/* ---------- Timeline (10s) ---------- */
+const counter = document.getElementById('counter');
+const cnt = { v: 0 };
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const ease = 'outExpo';
+
+const tl = createTimeline({ defaults: { ease: 'outCubic' }, autoplay: true });
+
+/* Scene 1: 0 - 2.2s */
+tl.add('#s1', { opacity: [0, 1], duration: 1 }, 0)
+  .add('#t1', { opacity: [0, 1], translateY: [40, 0], scale: [0.94, 1], duration: 1000, ease }, 150)
+  .add('#t1s', { opacity: [0, 1], translateY: [24, 0], duration: 800, ease }, 650)
+  .add('#t1r', { scaleX: [0, 1], opacity: [0, 1], duration: 700, ease }, 900)
+  .add('#s1', { opacity: 0, duration: 400, ease: 'inQuad' }, 1900);
+
+/* Scene 2: 2.2 - 5.2s */
+tl.add('#s2', { opacity: [0, 1], duration: 1 }, 2200)
+  .add('#bigbox', { opacity: [0, 1], translateY: [30, 0], duration: 700, ease }, 2250)
+  .add('#k2', { opacity: [0, 1], duration: 600 }, 2500)
+  .add(cnt, { v: [0, 1250], duration: 2000, ease: 'outExpo', onUpdate: () => { counter.textContent = fmt(cnt.v); } }, 2350)
+  .add('.barrect', { scaleY: [0, 1], duration: 800, delay: stagger(110), ease: 'outBack' }, 2700)
+  .add('.barval', { opacity: [0, 1], translateY: [10, 0], duration: 500, delay: stagger(110) }, 3100)
+  .add('.barq', { opacity: [0, 1], duration: 500, delay: stagger(110) }, 2800)
+  .add('#lowpill', { opacity: [0, 1], duration: 400 }, 3950)
+  .add('#lowtag', { opacity: [0, 1], duration: 400 }, 3950)
+  .add('#lowbar', { scaleY: [1, 1.05, 1], duration: 700, ease: 'inOutSine' }, 3950)
+  .add('#s2', { opacity: 0, duration: 400, ease: 'inQuad' }, 4900);
+
+/* Scene 3: 5.3 - 8.3s */
+tl.add('#s3', { opacity: [0, 1], duration: 1 }, 5300)
+  .add(['#k3a', '#k3b'], { opacity: [0, 1], translateY: [14, 0], duration: 600 }, 5350)
+  .add(createDrawable('#line'), { draw: ['0 0', '0 1'], duration: 1500, ease: 'inOutCubic' }, 5500)
+  .add('#area', { opacity: [0, 1], duration: 900 }, 6300)
+  .add('.dot', { opacity: [0, 1], scale: [0, 1], duration: 450, delay: stagger(260), ease: createSpring({ stiffness: 220, damping: 14 }) }, 5700)
+  .add('.dlbl', { opacity: [0, 1], translateY: [8, 0], duration: 450, delay: stagger(260) }, 5800)
+  .add(createDrawable('.seg'), { draw: ['0 0', '0 1'], duration: 900, delay: stagger(450), ease: 'inOutCubic' }, 5700)
+  .add(['#dc1', '#dc2'], { opacity: [0, 1], duration: 600 }, 6900)
+  .add('.legend .row', { opacity: [0, 1], translateX: [20, 0], duration: 500, delay: stagger(150) }, 6400)
+  .add('#s3', { opacity: 0, duration: 450, ease: 'inQuad' }, 8000);
+
+/* Scene 4: 8.4 - 10s */
+tl.add('#s4', { opacity: [0, 1], duration: 1 }, 8400)
+  .add('#t4', { opacity: [0, 1], translateY: [40, 0], scale: [0.94, 1], duration: 1000, ease }, 8450)
+  .add('#t4r', { scaleX: [0, 1], opacity: [0, 1], duration: 700, ease }, 8900);
+</script>
+</body>
+</html>

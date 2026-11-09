@@ -1,0 +1,2 @@
+motion "Text" 640x360 2s
+  text "Hello Orb" box=70,110,500,120 size=54 weight=800 font=Inter color=#ffffff align=center bg=#176b65 radius=18 pad=16 dur=2 in=rise out=fade

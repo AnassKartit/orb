@@ -1,0 +1,6 @@
+motion "Compound filter" 16:9 5s
+  group at=0
+    rect at=0 color="linear-gradient(90deg,#FF2D78,#FFE600)"
+      filter at=.5 dur=1 grayscale=1 blur=8 brightness=.75 saturate=.5
+      filter at=2.5 dur=1 grayscale=0 blur=0 brightness=1 saturate=1
+    text "FILTER" at=0 box=300,420,1320,200 size=140 color=#fff bg=#0B0F1A radius=20 pad=20 align=center

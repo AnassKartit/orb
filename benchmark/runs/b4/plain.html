@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Uptime Report</title>
+<style>
+  html,body{margin:0;height:100%;background:#05070c;overflow:hidden;font-family:"Inter","Segoe UI",Helvetica,Arial,sans-serif;color:#e8edf7}
+  #stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+    background:radial-gradient(900px 600px at 20% 10%,#14213d 0%,rgba(20,33,61,0) 70%),radial-gradient(800px 600px at 90% 100%,#1a1440 0%,rgba(26,20,64,0) 70%),#0a0e17}
+  .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:64px 64px}
+  .scene{position:absolute;inset:0;opacity:0}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  h1{margin:0;font-size:108px;font-weight:800;letter-spacing:-2px;background:linear-gradient(90deg,#fff,#7fd6ff 60%,#6ee7b7);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{margin-top:18px;font-size:34px;letter-spacing:8px;text-transform:uppercase;color:#8da2c4}
+  .rule{height:4px;background:linear-gradient(90deg,#38bdf8,#34d399);border-radius:2px;margin-top:28px}
+  .label{font-size:22px;letter-spacing:6px;text-transform:uppercase;color:#8da2c4}
+  .big{font-size:150px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:#fff}
+  .big span{color:#34d399}
+  .card{position:absolute;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px}
+  .ct{position:absolute;font-size:20px;letter-spacing:3px;text-transform:uppercase;color:#8da2c4}
+  svg text{font-family:inherit}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="grid"></div>
+
+  <div class="scene center" id="s1">
+    <h1 id="t1">Uptime Report</h1>
+    <div class="rule" id="r1" style="width:0"></div>
+    <div class="sub" id="st1">Q3 reliability</div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div style="position:absolute;left:0;right:0;top:44px;text-align:center">
+      <div class="label">Uptime</div>
+      <div class="big" id="cnt">0.00<span>%</span></div>
+    </div>
+    <div class="card" style="left:170px;top:270px;width:940px;height:410px"></div>
+    <div class="ct" style="left:206px;top:290px">Monthly incident minutes</div>
+    <svg width="1280" height="720" style="position:absolute;left:0;top:0" id="bars"></svg>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="card" style="left:60px;top:90px;width:700px;height:540px"></div>
+    <div class="card" style="left:790px;top:90px;width:430px;height:540px"></div>
+    <div class="ct" style="left:96px;top:116px">Response time (ms)</div>
+    <div class="ct" style="left:826px;top:116px">Incident causes</div>
+    <svg width="1280" height="720" style="position:absolute;left:0;top:0" id="line"></svg>
+  </div>
+
+  <div class="scene center" id="s4">
+    <h1 id="t4">Stay online</h1>
+    <div class="rule" id="r4" style="width:0"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var NS="http://www.w3.org/2000/svg", DUR=10;
+  var $=function(i){return document.getElementById(i)};
+  var clamp=function(x,a,b){return Math.max(a,Math.min(b,x))};
+  var prog=function(t,a,b){return clamp((t-a)/(b-a),0,1)};
+  var easeOut=function(x){return 1-Math.pow(1-x,3)};
+  var easeIO=function(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+  var easeBack=function(x){var c=1.4;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+
+  // scene windows [start,end]
+  var S={s1:[0,2.4],s2:[2.2,5.4],s3:[5.2,8.4],s4:[8.2,10.01]};
+  function vis(t,a,b,last){
+    var i=easeOut(prog(t,a,a+.5)), o=last?1:1-easeIO(prog(t,b-.45,b));
+    return Math.min(i,o);
+  }
+
+  // ---------- Bars ----------
+  var bars=$("bars"), months=["Jan","Feb","Mar","Apr","May","Jun"], inc=[42,31,55,18,12,9];
+  var bx0=230, bw=96, gap=44, base=630, maxH=270, worst=inc.indexOf(Math.max.apply(null,inc));
+  var defs=el("defs",{},bars);
+  var g1=el("linearGradient",{id:"gb",x1:0,y1:0,x2:0,y2:1},defs);
+  el("stop",{offset:0,"stop-color":"#38bdf8"},g1);el("stop",{offset:1,"stop-color":"#2563eb"},g1);
+  var g2=el("linearGradient",{id:"gw",x1:0,y1:0,x2:0,y2:1},defs);
+  el("stop",{offset:0,"stop-color":"#fbbf24"},g2);el("stop",{offset:1,"stop-color":"#f43f5e"},g2);
+  el("line",{x1:200,x2:1080,y1:base,y2:base,stroke:"rgba(255,255,255,.18)"},bars);
+  var B=[];
+  inc.forEach(function(v,i){
+    var x=bx0+i*(bw+gap), h=v/55*maxH;
+    var r=el("rect",{x:x,y:base,width:bw,height:0,rx:10,fill:i===worst?"url(#gw)":"url(#gb)"},bars);
+    var val=el("text",{x:x+bw/2,y:base-10,"text-anchor":"middle","font-size":26,"font-weight":700,fill:i===worst?"#fbbf24":"#e8edf7",opacity:0},bars);
+    val.textContent=v;
+    var m=el("text",{x:x+bw/2,y:base+30,"text-anchor":"middle","font-size":22,fill:"#8da2c4"},bars);m.textContent=months[i];
+    B.push({r:r,val:val,x:x,h:h,v:v});
+  });
+  var tag=el("text",{x:B[worst].x+bw/2,y:base-B[worst].h-52,"text-anchor":"middle","font-size":16,"letter-spacing":2,"font-weight":700,fill:"#f43f5e",opacity:0},bars);
+  tag.textContent="WORST MONTH";
+
+  // ---------- Line + donut ----------
+  var L=$("line");
+  var ld=el("defs",{},L);
+  var lg=el("linearGradient",{id:"lg",x1:0,y1:0,x2:1,y2:0},ld);
+  el("stop",{offset:0,"stop-color":"#38bdf8"},lg);el("stop",{offset:1,"stop-color":"#34d399"},lg);
+  var ag=el("linearGradient",{id:"ag",x1:0,y1:0,x2:0,y2:1},ld);
+  el("stop",{offset:0,"stop-color":"#38bdf8","stop-opacity":.28},ag);el("stop",{offset:1,"stop-color":"#38bdf8","stop-opacity":0},ag);
+  var resp=[210,190,180,160,150,140], lx0=120, lx1=715, ly0=210, ly1=540, vmin=120, vmax=230;
+  var pts=resp.map(function(v,i){return [lx0+i*(lx1-lx0)/5, ly1-(v-vmin)/(vmax-vmin)*(ly1-ly0)]});
+  [120,160,200].forEach(function(v){
+    var y=ly1-(v-vmin)/(vmax-vmin)*(ly1-ly0);
+    el("line",{x1:lx0-20,x2:lx1+20,y1:y,y2:y,stroke:"rgba(255,255,255,.08)"},L);
+    var t=el("text",{x:lx0-30,y:y+5,"text-anchor":"end","font-size":16,fill:"#6b7d9c"},L);t.textContent=v;
+  });
+  function smooth(p){
+    var d="M"+p[0][0]+","+p[0][1];
+    for(var i=0;i<p.length-1;i++){
+      var p0=p[i-1]||p[i],p1=p[i],p2=p[i+1],p3=p[i+2]||p2,k=6;
+      d+=" C"+(p1[0]+(p2[0]-p0[0])/k)+","+(p1[1]+(p2[1]-p0[1])/k)+" "+(p2[0]-(p3[0]-p1[0])/k)+","+(p2[1]-(p3[1]-p1[1])/k)+" "+p2[0]+","+p2[1];
+    }
+    return d;
+  }
+  var dline=smooth(pts);
+  var area=el("path",{d:dline+" L"+lx1+","+ly1+" L"+lx0+","+ly1+" Z",fill:"url(#ag)",opacity:0},L);
+  var path=el("path",{d:dline,fill:"none",stroke:"url(#lg)","stroke-width":5,"stroke-linecap":"round"},L);
+  var plen=path.getTotalLength();
+  path.style.strokeDasharray=plen;path.style.strokeDashoffset=plen;
+  var dots=[];
+  pts.forEach(function(p,i){
+    var c=el("circle",{cx:p[0],cy:p[1],r:7,fill:"#0a0e17",stroke:"#e8edf7","stroke-width":3,opacity:0},L);
+    var t=el("text",{x:p[0],y:p[1]-18,"text-anchor":"middle","font-size":20,"font-weight":700,fill:"#e8edf7",opacity:0},L);t.textContent=resp[i];
+    var m=el("text",{x:p[0],y:ly1+36,"text-anchor":"middle","font-size":18,fill:"#8da2c4"},L);m.textContent=months[i];
+    dots.push({c:c,t:t});
+  });
+
+  var causes=[["Network",40,"#38bdf8"],["Deploys",35,"#a78bfa"],["Hardware",25,"#fbbf24"]];
+  var cx=1005, cy=345, R=95, SW=40, C=2*Math.PI*R, segs=[], acc=0;
+  el("circle",{cx:cx,cy:cy,r:R,fill:"none",stroke:"rgba(255,255,255,.06)","stroke-width":SW},L);
+  causes.forEach(function(c){
+    var c1=el("circle",{cx:cx,cy:cy,r:R,fill:"none",stroke:c[2],"stroke-width":SW,transform:"rotate(-90 "+cx+" "+cy+")"},L);
+    segs.push({el:c1,start:acc,len:c[1]/100});acc+=c[1]/100;
+  });
+  var ctr=el("text",{x:cx,y:cy+4,"text-anchor":"middle","font-size":40,"font-weight":800,fill:"#fff"},L);ctr.textContent="100%";
+  var cs=el("text",{x:cx,y:cy+30,"text-anchor":"middle","font-size":14,"letter-spacing":2,fill:"#8da2c4"},L);cs.textContent="OF INCIDENTS";
+  var leg=[];
+  causes.forEach(function(c,i){
+    var y=490+i*40, g=el("g",{opacity:0},L);
+    el("rect",{x:840,y:y-14,width:18,height:18,rx:5,fill:c[2]},g);
+    var a=el("text",{x:870,y:y+1,"font-size":22,fill:"#e8edf7"},g);a.textContent=c[0];
+    var b=el("text",{x:1185,y:y+1,"text-anchor":"end","font-size":22,"font-weight":700,fill:"#e8edf7"},g);b.textContent=c[1]+"%";
+    leg.push(g);
+  });
+
+  // ---------- Render ----------
+  function render(t){
+    // scene opacities
+    $("s1").style.opacity=vis(t,S.s1[0]-.5,S.s1[1]);
+    $("s2").style.opacity=vis(t,S.s2[0],S.s2[1]);
+    $("s3").style.opacity=vis(t,S.s3[0],S.s3[1]);
+    $("s4").style.opacity=vis(t,S.s4[0],S.s4[1],true);
+
+    // scene 1
+    var a=easeOut(prog(t,.15,1.1)), b=easeOut(prog(t,.8,1.7));
+    $("t1").style.transform="translateY("+(24*(1-a))+"px) scale("+(.96+.04*a)+")";
+    $("t1").style.opacity=a;
+    $("r1").style.width=(260*easeIO(prog(t,.6,1.5)))+"px";
+    $("st1").style.opacity=b;$("st1").style.transform="translateY("+(16*(1-b))+"px)";
+
+    // scene 2
+    var ct=t-S.s2[0];
+    var cv=99.98*easeOut(prog(ct,.2,2.0));
+    $("cnt").innerHTML=cv.toFixed(2)+"<span>%</span>";
+    $("s2").children[0].style.transform="translateY("+(20*(1-easeOut(prog(ct,0,.6))))+"px)";
+    B.forEach(function(o,i){
+      var p=easeBack(prog(ct,.5+i*.12,1.3+i*.12)), h=Math.max(0,o.h*p);
+      o.r.setAttribute("height",h);o.r.setAttribute("y",base-h);
+      o.val.setAttribute("y",base-h-12);
+      o.val.setAttribute("opacity",prog(ct,.9+i*.12,1.4+i*.12));
+    });
+    var tp=prog(ct,1.7,2.1);
+    tag.setAttribute("opacity",tp);
+    tag.setAttribute("y",base-B[worst].h-52-(1-tp)*10);
+    B[worst].r.style.filter="drop-shadow(0 0 "+(10+8*Math.sin(t*5)*tp)+"px rgba(244,63,94,"+.55*tp+"))";
+
+    // scene 3
+    var lt=t-S.s3[0];
+    var lp=easeIO(prog(lt,.3,1.9));
+    path.style.strokeDashoffset=plen*(1-lp);
+    area.setAttribute("opacity",prog(lt,1.2,2.1));
+    dots.forEach(function(d,i){
+      var o=prog(lp,i/5-.02,i/5+.06);
+      d.c.setAttribute("opacity",o);d.t.setAttribute("opacity",o);
+    });
+    var dp=easeIO(prog(lt,.5,2.0));
+    segs.forEach(function(s){
+      var vis=clamp(dp-s.start,0,s.len), gapPx=2;
+      var L1=Math.max(0,vis*C-(vis>0?gapPx:0));
+      s.el.setAttribute("stroke-dasharray",L1+" "+(C-L1));
+      s.el.setAttribute("stroke-dashoffset",-s.start*C);
+    });
+    leg.forEach(function(g,i){
+      var o=easeOut(prog(lt,1.2+i*.2,1.7+i*.2));
+      g.setAttribute("opacity",o);g.setAttribute("transform","translate("+(16*(1-o))+",0)");
+    });
+
+    // scene 4
+    var et=t-S.s4[0], e=easeOut(prog(et,.1,.9));
+    $("t4").style.opacity=e;$("t4").style.transform="scale("+(1.06-.06*e)+")";
+    $("r4").style.width=(300*easeIO(prog(et,.5,1.3)))+"px";
+  }
+
+  // ---------- Fit + loop ----------
+  function fit(){
+    var s=Math.min(innerWidth/1280,innerHeight/720);
+    var st=$("stage");
+    st.style.transform="translate("+((innerWidth-1280*s)/2)+"px,"+((innerHeight-720*s)/2)+"px) scale("+s+")";
+  }
+  addEventListener("resize",fit);fit();
+  var t0=null;
+  function frame(ts){
+    if(t0===null)t0=ts;
+    render(((ts-t0)/1000)%DUR);
+    requestAnimationFrame(frame);
+  }
+  render(0);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

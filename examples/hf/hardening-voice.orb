@@ -1,0 +1,5 @@
+motion "Single-file voice clock" 16:9 3s voice=assets/hardening.words.json
+  rect at=0 color=#0f172a
+  text "Click Create" at=@"Click Create" until=@end box=300,240,1320,200 size=100 align=center in=pop
+  captions "assets/hardening.words.json" at=0 size=80 box=300,650,1320,160 color=#fff stroke="3px #000" highlight=#facc15
+  sfx ping at=@"Create"

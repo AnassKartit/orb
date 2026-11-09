@@ -1,0 +1,4 @@
+motion "To" 640x360 3s
+  rect id=tile box=220,100,160,160 color=#176b65 radius=20 dur=3
+    to at=0.3 dur=0.6 x=100 y=20 scale=1.1 rotate=10 opacity=0.7 blur=1 ease=out
+    to at=1.5 dur=0.6 x=0 y=0 scale=1 rotate=0 opacity=1 blur=0

@@ -1,0 +1,13 @@
+motion "Uptime Report" 1280x720 10s bg=slate
+  scene 0-2s
+    eyebrow "Q3 RELIABILITY"
+    title "Uptime Report" in=blur
+    sub "Q3 reliability" in=rise
+  scene 2-5s layout=stack
+    count "Uptime" 99.98%
+    bars 42 31 55 18 12 9 labels=Jan,Feb,Mar,Apr,May,Jun peak="WORST MONTH" title="INCIDENT MINUTES PER MONTH"
+  scene 5-8s
+    line 210 190 180 160 150 140 labels=Jan,Feb,Mar,Apr,May,Jun title="RESPONSE TIME (MS)" in=draw
+    donut Network=40 Deploys=35 Hardware=25 title="INCIDENT CAUSES %"
+  scene 8-10s
+    title "Stay online" in=pop

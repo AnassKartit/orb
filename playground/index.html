@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orb playground</title>
+<style>
+  :root { --page: #0b0f1a; --panel: #0e1220; --line: #222a40; --ink: #e8ebff; --quiet: #8e98c0; --blue: #6ea8ff; --good: #4ade80; --code: 13px/20px ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  p { margin: 0; }
+  header, footer, .bar, .row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+  header, footer, .bar { background: var(--panel); }
+  header { padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-right: auto; }
+  h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: .01em; }
+  label, .quiet { color: var(--quiet); }
+  select, button { padding: 6px 12px; background: #1b2340; color: var(--ink); border: 1px solid #2c3658; border-radius: 8px; font: inherit; cursor: pointer; }
+  select { max-width: min(46vw, 340px); }
+  select:hover, button:hover { border-color: var(--blue); }
+  button.primary { background: #2b4a8a; border-color: #3d63b3; }
+  button:disabled { opacity: .45; cursor: default; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  code { padding: 3px 8px; background: #070a12; color: #c9d1f5; border: 1px solid var(--line); border-radius: 6px; font: var(--code); user-select: all; overflow-wrap: anywhere; }
+  #render { white-space: nowrap; }
+  [role="status"] { color: var(--quiet); }
+  main { flex: 1; display: flex; min-height: 0; }
+  #left { display: flex; flex-direction: column; width: 44%; min-width: 340px; border-right: 1px solid var(--line); }
+  #right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .bar { min-height: 46px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+
+  /* tutorial strip */
+  #lesson { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; background: #111a33; border-bottom: 1px solid #2b3a66; }
+  #lesson-title { font-size: 15px; }
+  #lesson-count { margin-left: auto; }
+  #lesson-done { padding: 1px 9px; background: #123a25; color: var(--good); border: 1px solid #1e6b42; border-radius: 999px; font-weight: 600; }
+  #lesson-done::before { content: "\2713\00a0"; }
+  #lesson-say code { padding: 1px 6px; }
+
+  /* editor */
+  .tabs { display: flex; gap: 4px; align-self: flex-end; margin: 0 auto -7px 0; }
+  .tabs button { border-radius: 8px 8px 0 0; border-bottom-color: transparent; background: transparent; color: var(--quiet); }
+  .tabs button[aria-selected="true"] { background: var(--page); color: var(--ink); }
+  #editor, #expanded, #frames { flex: 1; min-height: 0; }
+  #editor { position: relative; display: flex; min-height: 110px; overflow: hidden; }
+  #gutter, #source, #expanded { margin: 0; padding: 12px 0; font: var(--code); tab-size: 2; }
+  #gutter { width: 44px; padding-right: 10px; overflow: hidden; color: #55608a; text-align: right; user-select: none; }
+  #gutter b { color: #ff9aa8; font-weight: 700; }
+  #mark { position: absolute; left: 0; right: 0; height: 20px; background: #ff4d6d24; border-left: 3px solid #ff4d6d; pointer-events: none; }
+  #source { position: relative; flex: 1; min-width: 0; padding-right: 12px; background: transparent; color: inherit; border: 0; outline: 0; resize: none; white-space: pre; overflow: auto; }
+  #expanded { padding: 12px 16px; overflow: auto; white-space: pre; color: #c9d1f5; }
+
+  /* colours and media of the file */
+  #palette { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; background: var(--panel); border-top: 1px solid var(--line); }
+  #swatches, #chips { display: contents; }
+  .swatch { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 4px; border: 1px solid #2c3658; border-radius: 999px; color: #c9d1f5; font: var(--code); cursor: pointer; }
+  .swatch:hover, .swatch:focus-within { border-color: var(--blue); }
+  .swatch input { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+  .swatch input::-webkit-color-swatch-wrapper { padding: 0; }
+  .swatch input::-webkit-color-swatch, .swatch input::-moz-color-swatch { border: 1px solid #ffffff40; border-radius: 50%; }
+  .chip { padding: 3px 10px; border-radius: 999px; font: var(--code); }
+  .chip::before { content: attr(data-kind) "\00a0\00a0"; color: var(--quiet); }
+  .chip.missing { border-style: dashed; color: #ffb4bf; }
+  #palette.point .swatch:first-child { animation: point 1.2s ease-in-out infinite; }
+  @keyframes point { 50% { box-shadow: 0 0 0 4px #6ea8ff66; border-color: var(--blue); } }
+
+  /* messages under the editor */
+  #status { display: flex; flex-direction: column; gap: 6px; padding: 8px 16px 10px; background: var(--panel); border-top: 1px solid var(--line); }
+  #problem { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; padding: 8px 12px; background: #2a1320; border: 1px solid #7a2a3c; border-radius: 8px; color: #ffd7dc; }
+  #problem-line { padding: 0 8px; background: #7a2a3c; border-radius: 999px; color: #fff; cursor: pointer; }
+  #problem-hint { color: #ffe9a8; }
+  #problem-fix { padding: 2px 10px; }
+  #warnings { max-height: 4.4em; overflow: auto; color: #e7c873; white-space: pre-wrap; }
+  #size { color: var(--quiet); font-variant-numeric: tabular-nums; }
+
+  /* preview: two stacked frames, the one named "preview" in front */
+  #frames { position: relative; background: var(--page); }
+  #frames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--page); }
+  #preview { z-index: 1; }
+  #hint { position: absolute; z-index: 2; left: 50%; bottom: 76px; transform: translateX(-50%); padding: 6px 16px; background: #0b0f1ae6; border: 1px solid var(--blue); border-radius: 999px; pointer-events: none; white-space: nowrap; }
+  #empty { position: absolute; z-index: 3; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; background: var(--page); text-align: center; }
+  #empty strong { font-size: 18px; }
+
+  footer { padding: 8px 16px; border-top: 1px solid var(--line); font-size: 13px; }
+  footer strong { font-weight: 650; }
+  footer button { padding: 3px 10px; }
+  [hidden] { display: none !important; }
+
+  /* phone: one column, the editor above the preview, the page scrolls */
+  @media (max-width: 800px) {
+    html, body { height: auto; }
+    main { flex-direction: column; }
+    #left { width: auto; min-width: 0; border-right: 0; }
+    header label { display: none; }
+    select { max-width: 150px; }
+    #lesson { padding: 10px 16px; }
+    #editor, #expanded { flex: none; height: 160px; }
+    #frames { flex: none; height: calc(56.25vw + 56px); min-height: 260px; }
+    #right .bar { order: 1; border-top: 1px solid var(--line); border-bottom: 0; }   /* the result comes right after the editor */
+    #hint { bottom: 68px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Orb</h1>
+    <p class="quiet">A small language AI models write to make videos, decks and interactive animations</p>
+  </div>
+  <button id="learn" type="button">Learn Orb</button>
+  <label for="samples">Samples</label>
+  <select id="samples"><option value="">Choose a sample</option></select>
+  <button id="share" type="button">Copy link</button>
+  <span id="shared" role="status"></span>
+</header>
+<main>
+  <section id="left" aria-label="Source">
+    <section id="lesson" aria-label="Learn Orb" hidden>
+      <div class="row">
+        <strong id="lesson-title"></strong>
+        <span id="lesson-done" hidden>Done</span>
+        <span id="lesson-count" class="quiet"></span>
+      </div>
+      <p id="lesson-say"></p>
+      <div class="row">
+        <button id="lesson-back" type="button">Back</button>
+        <button id="lesson-show" type="button">Show me</button>
+        <button id="lesson-next" type="button" class="primary">Next</button>
+        <button id="lesson-samples" type="button" class="primary" hidden>Open the samples</button>
+        <button id="lesson-empty" type="button" hidden>Start from an empty file</button>
+      </div>
+    </section>
+    <div class="bar">
+      <div class="tabs" role="tablist">
+        <button id="tab-source" type="button" role="tab" aria-selected="true">Source</button>
+        <button id="tab-expanded" type="button" role="tab" aria-selected="false">Expanded</button>
+      </div>
+      <button id="add-media" type="button">Add image or video</button>
+      <input id="media-file" type="file" hidden>
+    </div>
+    <div id="editor">
+      <div id="mark" hidden></div>
+      <pre id="gutter" aria-hidden="true"></pre>
+      <textarea id="source" aria-label="Orb source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off"></textarea>
+    </div>
+    <pre id="expanded" tabindex="0" hidden></pre>
+    <div id="palette" hidden>
+      <div id="swatches" role="group" aria-label="Colours in this file"></div>
+      <div id="chips" role="group" aria-label="Media files in this file"></div>
+    </div>
+    <div id="status">
+      <div id="problem" role="alert" hidden>
+        <strong id="problem-line"></strong>
+        <span id="problem-text"></span>
+        <span id="problem-hint"></span>
+        <button id="problem-fix" type="button" hidden></button>
+      </div>
+      <p id="warnings" hidden></p>
+      <p id="size"></p>
+    </div>
+  </section>
+  <section id="right" aria-label="Preview">
+    <div class="bar">
+      <button id="export" type="button" disabled>Export HTML</button>
+      <button id="record" type="button" disabled>Record video</button>
+      <button id="cancel-record" type="button" hidden>Cancel</button>
+      <span id="record-status" role="status"></span>
+      <span class="quiet">Records in real time. For frame-exact MP4 use the command line. <code id="render">orb render file.orb out.mp4 1080</code></span>
+    </div>
+    <div id="frames">
+      <iframe id="preview" title="Preview" sandbox="allow-scripts" allow="autoplay"></iframe>
+      <iframe id="preview-spare" title="Preview, loading" sandbox="allow-scripts" allow="autoplay" tabindex="-1" aria-hidden="true"></iframe>
+      <p id="hint" hidden>click or use the arrow keys</p>
+      <div id="empty" hidden>
+        <strong>Nothing to play yet</strong>
+        <p class="quiet">Write a file on the left, pick a sample, or take the nine short steps of Learn Orb.</p>
+        <button id="empty-start" type="button" class="primary">Start with three lines</button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <span class="quiet">Install</span>
+  <code id="install">git clone https://github.com/AnassKartit/orb.git &amp;&amp; cd orb &amp;&amp; npm install</code>
+  <button type="button" data-copy="install">Copy</button>
+  <strong>Use it from your AI agent</strong>
+  <code id="agent">claude mcp add orb -- node /path/to/orb/src/mcp.js</code>
+  <button id="copy-agent" type="button" data-copy="agent">Copy</button>
+  <span id="agent-status" role="status"></span>
+  <span class="quiet">The MCP server gives a model the cheat sheet plus check, build, expand and render tools.</span>
+</footer>
+<script src="orb-compiler.js"></script>
+<script src="lessons.js"></script>
+<script src="playground.js"></script>
+</body>
+</html>

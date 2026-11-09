@@ -1,0 +1,7 @@
+motion "Launch" 1280x720 8s bg=slate
+  scene 4s
+    orb color=blue spin=0.5 particles=360
+    title "Meet Prism" at=0.5
+  scene 4s
+    orb color=orange spin=0.8 size=300 particles=200
+    sub "Motion graphics, written in 90 tokens" at=0.4

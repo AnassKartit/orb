@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Uptime Report</title>
+<style>
+html,body{margin:0;background:#05080f;height:100%;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center;font-family:Inter,"Segoe UI",Helvetica,Arial,sans-serif;color:#e8eefc}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(900px 500px at 20% 0%,#14213d 0%,#0a0f1c 55%,#05080f 100%)}
+.abs{position:absolute}
+.c{left:0;width:1280px;text-align:center}
+.scene{position:absolute;inset:0;opacity:0}
+h1{margin:0;font-size:96px;font-weight:800;letter-spacing:-2px}
+.sub{font-size:34px;color:#7dd3fc;letter-spacing:6px;text-transform:uppercase}
+.lbl{font-size:18px;letter-spacing:4px;text-transform:uppercase;color:#8a9bbd}
+.big{font-size:150px;font-weight:800;color:#5eead4;letter-spacing:-4px;font-variant-numeric:tabular-nums}
+.t{font-size:22px;font-weight:600;color:#cbd5f0}
+svg text{font-family:inherit;fill:#8a9bbd;font-size:16px}
+.leg{font-size:20px;color:#cbd5f0}
+</style></head><body>
+<div id="stage">
+<div class="scene" id="s1">
+ <div class="abs c" style="top:250px"><h1 id="t1">Uptime Report</h1></div>
+ <div class="abs c sub" style="top:375px" id="st1">Q3 reliability</div>
+ <div class="abs" id="ln" style="left:540px;top:360px;width:200px;height:3px;background:linear-gradient(90deg,#38bdf8,#5eead4);transform-origin:center"></div>
+</div>
+
+<div class="scene" id="s2">
+ <div class="abs c lbl" style="top:40px">Uptime</div>
+ <div class="abs c big" style="top:62px" id="cnt">0.00%</div>
+ <div class="abs t" style="left:190px;top:268px">Monthly incident minutes</div>
+ <svg class="abs" style="left:0;top:0" width="1280" height="720" id="bars"></svg>
+</div>
+
+<div class="scene" id="s3">
+ <div class="abs t" style="left:80px;top:70px">Response time (ms)</div>
+ <div class="abs t" style="left:760px;top:70px">Incident causes</div>
+ <svg class="abs" style="left:0;top:0" width="1280" height="720" id="s3svg"></svg>
+</div>
+
+<div class="scene" id="s4">
+ <div class="abs c" style="top:290px"><h1 id="t4">Stay online</h1></div>
+ <div class="abs c sub" style="top:410px;color:#5eead4" id="st4">99.98% and counting</div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+const NS="http://www.w3.org/2000/svg";
+function el(p,n,a,txt){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;p.appendChild(e);return e}
+
+// Bars
+const bs=document.getElementById("bars");
+const months=["Jan","Feb","Mar","Apr","May","Jun"],inc=[42,31,55,18,12,9];
+const base=660,maxH=330,bw=100,gap=80,x0=(1280-(6*bw+5*gap))/2;
+el(bs,"line",{x1:x0-20,x2:1280-x0+20,y1:base,y2:base,stroke:"#26324d","stroke-width":2});
+const barEls=[],valEls=[];
+inc.forEach((v,i)=>{
+ const h=v/55*maxH,x=x0+i*(bw+gap),worst=v===55;
+ const r=el(bs,"rect",{x,y:base-h,width:bw,height:h,rx:10,fill:worst?"#fb7185":"#38bdf8"});
+ r.style.transformOrigin=`${x+bw/2}px ${base}px`;barEls.push(r);
+ const t=el(bs,"text",{x:x+bw/2,y:base-h-12,"text-anchor":"middle",style:"font-size:22px;font-weight:700;fill:"+(worst?"#fb7185":"#e8eefc")},v);valEls.push(t);
+ el(bs,"text",{x:x+bw/2,y:base+30,"text-anchor":"middle"},months[i]);
+});
+const worstTag=el(bs,"text",{x:x0+2*(bw+gap)+bw/2,y:base-55/55*maxH-40,"text-anchor":"middle",style:"font-size:16px;font-weight:700;fill:#fb7185;letter-spacing:2px"},"WORST MONTH");
+
+// Line + donut
+const s3=document.getElementById("s3svg");
+const rt=[210,190,180,160,150,140];
+const lx=80,lw=560,ly=140,lh=400;
+const pts=rt.map((v,i)=>[lx+40+i*(lw-60)/5,ly+(v-120)/(230-120)*lh*0.85+10]);
+[120,160,200].forEach(g=>{const y=ly+(g-120)/110*lh*0.85+10;el(s3,"line",{x1:lx,x2:lx+lw,y1:y,y2:y,stroke:"#1f2a44"});el(s3,"text",{x:lx,y:y-6},g)});
+// catmull-rom to bezier
+let d=`M${pts[0][0]},${pts[0][1]}`;
+for(let i=0;i<pts.length-1;i++){const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+ d+=` C${p1[0]+(p2[0]-p0[0])/6},${p1[1]+(p2[1]-p0[1])/6} ${p2[0]-(p3[0]-p1[0])/6},${p2[1]-(p3[1]-p1[1])/6} ${p2[0]},${p2[1]}`}
+const defs=el(s3,"defs",{});
+const area=el(s3,"path",{d:d+` L${pts[5][0]},${ly+400} L${pts[0][0]},${ly+400} Z`,fill:"#38bdf8",opacity:0});
+const path=el(s3,"path",{d,fill:"none",stroke:"#38bdf8","stroke-width":5,"stroke-linecap":"round"});
+const dots=pts.map((p,i)=>{const c=el(s3,"circle",{cx:p[0],cy:p[1],r:7,fill:"#0a0f1c",stroke:"#5eead4","stroke-width":3});
+ const t=el(s3,"text",{x:p[0],y:p[1]-18,"text-anchor":"middle",style:"font-size:18px;font-weight:700;fill:#e8eefc"},rt[i]);
+ el(s3,"text",{x:p[0],y:ly+440,"text-anchor":"middle"},months[i]);return [c,t]});
+const L=path.getTotalLength();path.style.strokeDasharray=L;path.style.strokeDashoffset=L;
+
+const cx=960,cy=345,R=105,sw=46,C=2*Math.PI*R;
+const causes=[["Network",40,"#38bdf8"],["Deploys",35,"#a78bfa"],["Hardware",25,"#fbbf24"]];
+el(s3,"circle",{cx,cy,r:R,fill:"none",stroke:"#1a2440","stroke-width":sw});
+let acc=0;const segs=causes.map(([n,v,c])=>{
+ const len=v/100*C;
+ const s=el(s3,"circle",{cx,cy,r:R,fill:"none",stroke:c,"stroke-width":sw,"stroke-dasharray":`0 ${C}`,transform:`rotate(${-90+acc*3.6} ${cx} ${cy})`});
+ acc+=v;return {s,len}});
+const dc=el(s3,"text",{x:cx,y:cy+12,"text-anchor":"middle",style:"font-size:38px;font-weight:800;fill:#e8eefc;opacity:0"},"100%");
+const legs=causes.map(([n,v,c],i)=>{const y=520+i*40;
+ const g=el(s3,"g",{opacity:0});
+ el(g,"rect",{x:830,y:y-17,width:22,height:22,rx:6,fill:c});
+ el(g,"text",{x:868,y:y,style:"font-size:22px;fill:#cbd5f0"},n);
+ el(g,"text",{x:1110,y:y,"text-anchor":"end",style:"font-size:22px;font-weight:700;fill:#e8eefc"},v+"%");return g});
+
+// Timeline
+const tl=gsap.timeline();
+const ez="power3.out";
+// Scene 1 (0-2.3)
+tl.set("#s1",{opacity:1},0)
+ .from("#t1",{y:40,opacity:0,duration:1,ease:ez},0.2)
+ .from("#ln",{scaleX:0,duration:.8,ease:"power2.inOut"},0.7)
+ .from("#st1",{y:20,opacity:0,duration:.8,ease:ez},0.9)
+ .to("#s1",{opacity:0,y:-20,duration:.5,ease:"power2.in"},2.2)
+// Scene 2 (2.7-5.8)
+ .set("#s2",{opacity:1},2.7)
+ .from("#s2 .lbl",{opacity:0,y:15,duration:.5},2.7)
+ .from("#cnt",{opacity:0,scale:.9,duration:.6,ease:ez,transformOrigin:"50% 50%"},2.75);
+const o={v:0};
+tl.to(o,{v:99.98,duration:1.8,ease:"power2.out",onUpdate(){document.getElementById("cnt").textContent=o.v.toFixed(2)+"%"}},2.8)
+ .from("#s2 .t",{opacity:0,duration:.5},3.2)
+ .from(barEls,{scaleY:0,duration:.8,ease:"back.out(1.2)",stagger:.1},3.3)
+ .from(valEls,{opacity:0,duration:.4,stagger:.1},3.6)
+ .from(worstTag,{opacity:0,y:8,duration:.5},4.4)
+ .to(barEls[2],{filter:"drop-shadow(0 0 14px #fb7185)",duration:.6},4.4)
+ .to("#s2",{opacity:0,y:-20,duration:.5,ease:"power2.in"},5.5)
+// Scene 3 (6.0-8.4)
+ .set("#s3",{opacity:1},6.0)
+ .from("#s3 .t",{opacity:0,y:15,duration:.5,stagger:.15},6.0)
+ .to(area,{opacity:.12,duration:1,ease:"power1.out"},6.6)
+ .to(path,{strokeDashoffset:0,duration:1.3,ease:"power2.inOut"},6.3)
+ .from(dots.flat(),{opacity:0,scale:.3,transformOrigin:"center",duration:.4,stagger:.04},6.6);
+let off=0;
+segs.forEach((g,i)=>{tl.to(g.s,{attr:{"stroke-dasharray":`${g.len-3} ${C}`},duration:.8,ease:"power2.out"},6.4+i*.35)});
+tl.to(dc,{opacity:1,duration:.5},7.3)
+ .to(legs,{opacity:1,x:0,duration:.5,stagger:.12},7.0)
+ .to("#s3",{opacity:0,y:-20,duration:.5,ease:"power2.in"},9.0)
+// Scene 4 (9.2-10)
+ .set("#s4",{opacity:1},9.2)
+ .from("#t4",{scale:.92,opacity:0,duration:.7,ease:ez},9.2)
+ .from("#st4",{opacity:0,y:15,duration:.5},9.5);
+tl.set({}, {}, 10);
+</script>
+</body></html>

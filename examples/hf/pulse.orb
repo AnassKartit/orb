@@ -1,0 +1,3 @@
+motion "Pulse" 1080x600 3s
+  rect box=360,180,360,200 color=#7c5cff radius=24
+    pulse at=0.2,1.7 dur=0.8 scale=1.2 opacity=0.4 times=2

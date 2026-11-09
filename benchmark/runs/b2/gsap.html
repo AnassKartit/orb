@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sprint 24</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--bg:#0b0f1a;--fg:#f2f5fb;--mute:#8a94ab;--accent:#5eead4;--hi:#fbbf24;--blue:#6366f1;--card:#141a2b;--line:#252d45}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#05070c}
+  body{display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:Inter,"Segoe UI",system-ui,sans-serif;color:var(--fg)}
+  #stage{position:relative;width:1280px;height:720px;flex:none;overflow:hidden;background:radial-gradient(900px 600px at 20% 10%,#17204a 0%,transparent 60%),radial-gradient(800px 600px at 90% 100%,#0f3a3a 0%,transparent 55%),var(--bg);transform-origin:center}
+  .scene{position:absolute;inset:0;opacity:0}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  h1{font-size:128px;font-weight:800;letter-spacing:-3px;line-height:1}
+  .sub{font-size:36px;color:var(--accent);margin-top:22px;letter-spacing:6px;text-transform:uppercase;font-weight:600}
+  .rule{width:120px;height:4px;background:var(--accent);border-radius:2px;margin-top:34px}
+  .eyebrow{position:absolute;top:44px;left:64px;font-size:20px;letter-spacing:5px;text-transform:uppercase;color:var(--mute);font-weight:600}
+  #counter{position:absolute;top:70px;width:100%;text-align:center}
+  #num{font-size:170px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-4px}
+  #lbl{font-size:28px;color:var(--mute);letter-spacing:6px;text-transform:uppercase;margin-top:4px;font-weight:600}
+  .panel{position:absolute;top:120px;height:520px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px 32px}
+  .panel h3{font-size:22px;color:var(--mute);letter-spacing:3px;text-transform:uppercase;font-weight:600}
+  svg text{font-family:inherit}
+  #legend{position:absolute;left:830px;top:225px;width:330px}
+  .lg{display:flex;align-items:center;font-size:26px;margin:0 0 26px;opacity:0}
+  .lg i{width:18px;height:18px;border-radius:6px;margin-right:16px}
+  .lg b{margin-left:auto;font-weight:700}
+  .lg span{color:var(--fg)}
+  #bigtitle{font-size:150px}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- Scene 1: title -->
+  <div class="scene center" id="s1">
+    <h1 id="t1">Sprint 24</h1>
+    <div class="sub" id="st1">Shipped on time</div>
+    <div class="rule" id="r1"></div>
+  </div>
+
+  <!-- Scene 2: counter + bars -->
+  <div class="scene" id="s2">
+    <div id="counter"><div id="num">0</div><div id="lbl">Story points</div></div>
+    <svg id="bars" width="1280" height="720" style="position:absolute;inset:0"></svg>
+  </div>
+
+  <!-- Scene 3: burndown + donut -->
+  <div class="scene" id="s3">
+    <div class="eyebrow">Progress</div>
+    <div class="panel" style="left:64px;width:690px"><h3>Burndown</h3></div>
+    <div class="panel" style="left:790px;width:426px"><h3>Ticket status</h3></div>
+    <svg id="burn" width="1280" height="720" style="position:absolute;inset:0"></svg>
+    <div id="legend"></div>
+  </div>
+
+  <!-- Scene 4: end -->
+  <div class="scene center" id="s4">
+    <h1 id="bigtitle">Ship it</h1>
+    <div class="rule" id="r4"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var NS="http://www.w3.org/2000/svg";
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+
+  /* ---------- Bar chart ---------- */
+  var bsvg=document.getElementById("bars");
+  var vals=[12,20,17,24,13], days=["Mon","Tue","Wed","Thu","Fri"];
+  var base=640, scale=10.5, bw=110, gap=50, x0=(1280-(5*bw+4*gap))/2;
+  var defs=el("defs",{},bsvg);
+  var g1=el("linearGradient",{id:"gb",x1:0,y1:0,x2:0,y2:1},defs);
+  el("stop",{offset:"0","stop-color":"#818cf8"},g1);el("stop",{offset:"1","stop-color":"#4f46e5"},g1);
+  var g2=el("linearGradient",{id:"gh",x1:0,y1:0,x2:0,y2:1},defs);
+  el("stop",{offset:"0","stop-color":"#fde68a"},g2);el("stop",{offset:"1","stop-color":"#f59e0b"},g2);
+  el("line",{x1:x0-30,x2:1280-x0+30,y1:base,y2:base,stroke:"#252d45","stroke-width":2},bsvg);
+  var barEls=[],valEls=[];
+  vals.forEach(function(v,i){
+    var h=v*scale,x=x0+i*(bw+gap),hi=v===24;
+    var r=el("rect",{x:x,y:base-h,width:bw,height:h,rx:14,fill:hi?"url(#gh)":"url(#gb)"},bsvg);
+    r.style.transformBox="fill-box";r.style.transformOrigin="50% 100%";
+    barEls.push(r);
+    var t=el("text",{x:x+bw/2,y:base-h-14,"text-anchor":"middle","font-size":30,"font-weight":700,fill:hi?"#fbbf24":"#f2f5fb"},bsvg);
+    t.textContent=v;valEls.push(t);
+    var d=el("text",{x:x+bw/2,y:base+34,"text-anchor":"middle","font-size":22,fill:"#8a94ab","font-weight":600},bsvg);
+    d.textContent=days[i];
+  });
+  var glow=el("rect",{x:x0+3*(bw+gap)-8,y:base-24*scale-8,width:bw+16,height:24*scale+8,rx:20,fill:"none",stroke:"#fbbf24","stroke-width":3,opacity:0},bsvg);
+
+  /* ---------- Burndown ---------- */
+  var ssvg=document.getElementById("burn");
+  var bd=[40,34,29,22,15,9,0];
+  var cx0=110,cx1=720,cy0=560,cy1=250; // x range, y range (0 -> cy0, 40 -> cy1)
+  var pts=bd.map(function(v,i){return [cx0+i*(cx1-cx0)/6, cy0-(v/40)*(cy0-cy1)];});
+  [0,10,20,30,40].forEach(function(v){
+    var y=cy0-(v/40)*(cy0-cy1);
+    el("line",{x1:cx0-20,x2:cx1+20,y1:y,y2:y,stroke:"#252d45","stroke-width":1},ssvg);
+    var t=el("text",{x:cx0-34,y:y+6,"text-anchor":"end","font-size":16,fill:"#8a94ab"},ssvg);t.textContent=v;
+  });
+  function smooth(p){
+    var d="M"+p[0][0]+","+p[0][1];
+    for(var i=0;i<p.length-1;i++){
+      var p0=p[i-1]||p[i],p1=p[i],p2=p[i+1],p3=p[i+2]||p2,k=6;
+      d+=" C"+(p1[0]+(p2[0]-p0[0])/k)+","+(p1[1]+(p2[1]-p0[1])/k)+" "+(p2[0]-(p3[0]-p1[0])/k)+","+(p2[1]-(p3[1]-p1[1])/k)+" "+p2[0]+","+p2[1];
+    }
+    return d;
+  }
+  var dpath=smooth(pts);
+  var bdefs=el("defs",{},ssvg);
+  var lg=el("linearGradient",{id:"ga",x1:0,y1:0,x2:0,y2:1},bdefs);
+  el("stop",{offset:"0","stop-color":"#5eead4","stop-opacity":.35},lg);el("stop",{offset:"1","stop-color":"#5eead4","stop-opacity":0},lg);
+  var area=el("path",{d:dpath+" L"+cx1+","+cy0+" L"+cx0+","+cy0+" Z",fill:"url(#ga)",opacity:0},ssvg);
+  var line=el("path",{d:dpath,fill:"none",stroke:"#5eead4","stroke-width":5,"stroke-linecap":"round"},ssvg);
+  var len=line.getTotalLength();
+  line.style.strokeDasharray=len;line.style.strokeDashoffset=len;
+  var dots=pts.map(function(p,i){
+    var c=el("circle",{cx:p[0],cy:p[1],r:7,fill:"#0b0f1a",stroke:"#5eead4","stroke-width":4,opacity:0},ssvg);
+    c.style.transformBox="fill-box";c.style.transformOrigin="center";return c;
+  });
+  ["D1","D2","D3","D4","D5","D6","D7"].forEach(function(s,i){
+    var t=el("text",{x:pts[i][0],y:cy0+36,"text-anchor":"middle","font-size":16,fill:"#8a94ab"},ssvg);t.textContent=s;
+  });
+
+  /* ---------- Donut ---------- */
+  var dcx=1003,dcy=360,R=95,C=2*Math.PI*R,gapLen=6;
+  var segs=[["Done",70,"#5eead4"],["Review",20,"#818cf8"],["Todo",10,"#fbbf24"]];
+  el("circle",{cx:dcx,cy:dcy,r:R,fill:"none",stroke:"#1d2540","stroke-width":34},ssvg);
+  var acc=0,segEls=[],legend=document.getElementById("legend");
+  segs.forEach(function(s){
+    var L=s[1]/100*C;
+    var c=el("circle",{cx:dcx,cy:dcy,r:R,fill:"none",stroke:s[2],"stroke-width":34,"stroke-dasharray":"0 "+C,
+      transform:"rotate("+(-90+acc/C*360)+" "+dcx+" "+dcy+")"},ssvg);
+    segEls.push([c,L-gapLen]);acc+=L;
+    var row=document.createElement("div");row.className="lg";
+    row.innerHTML='<i style="background:'+s[2]+'"></i><span>'+s[0]+'</span><b>'+s[1]+'%</b>';
+    legend.appendChild(row);
+  });
+  var dc=el("text",{x:dcx,y:dcy+14,"text-anchor":"middle","font-size":44,"font-weight":800,fill:"#f2f5fb",opacity:0},ssvg);dc.textContent="70%";
+  // legend sits under donut area: reposition below ring
+  legend.style.left="830px";legend.style.top="500px";legend.style.width="350px";
+  legend.style.display="grid";legend.style.gridTemplateColumns="1fr";
+  legend.querySelectorAll(".lg").forEach(function(r){r.style.margin="0 0 8px";r.style.fontSize="22px";});
+
+  /* ---------- Timeline ---------- */
+  var tl=gsap.timeline({defaults:{ease:"power3.out"}});
+  window.__tl=tl;
+  gsap.set(["#s1","#s2","#s3","#s4"],{opacity:0});
+
+  // Scene 1: 0 - 2.3
+  tl.set("#s1",{opacity:1},0)
+    .from("#t1",{y:40,opacity:0,scale:.94,duration:.9},0.15)
+    .from("#st1",{y:20,opacity:0,duration:.7,letterSpacing:"14px"},0.65)
+    .from("#r1",{scaleX:0,opacity:0,duration:.6},0.9)
+    .to("#s1",{opacity:0,y:-20,duration:.5,ease:"power2.in"},2.0);
+
+  // Scene 2: 2.5 - 5.3
+  var cnt={v:0},num=document.getElementById("num");
+  tl.set("#s2",{opacity:1},2.5)
+    .from("#counter",{y:20,opacity:0,duration:.5},2.5)
+    .to(cnt,{v:86,duration:2,ease:"power2.out",onUpdate:function(){num.textContent=Math.round(cnt.v);}},2.55)
+    .from(barEls,{scaleY:0,duration:.8,stagger:.12,ease:"back.out(1.2)"},2.7)
+    .from(valEls,{opacity:0,y:12,duration:.5,stagger:.12},3.2)
+    .to(glow,{opacity:1,duration:.4},4.0)
+    .to(barEls[3],{scaleX:1.06,duration:.4,ease:"power2.out"},4.0)
+    .to(num,{color:"#fbbf24",duration:.4},4.5)
+    .to("#s2",{opacity:0,y:-20,duration:.5,ease:"power2.in"},5.0);
+
+  // Scene 3: 5.4 - 8.3
+  tl.set("#s3",{opacity:1},5.4)
+    .from("#s3 .eyebrow",{opacity:0,x:-16,duration:.5},5.4)
+    .from("#s3 .panel",{opacity:0,y:30,duration:.6,stagger:.12},5.45)
+    .to(area,{opacity:1,duration:1,ease:"power1.inOut"},6.1)
+    .to(line,{strokeDashoffset:0,duration:1.6,ease:"power2.inOut"},5.9)
+    .to(dots,{opacity:1,scale:1,duration:.3,stagger:.22,ease:"back.out(2)"},6.0)
+    .from(dots,{scale:0,duration:.3,stagger:.22,ease:"back.out(2)"},6.0);
+  segEls.forEach(function(s,i){
+    tl.to(s[0],{attr:{"stroke-dasharray":s[1]+" "+C},duration:.9,ease:"power2.inOut"},6.0+i*.35);
+  });
+  tl.to(dc,{opacity:1,duration:.5},6.8)
+    .to(".lg",{opacity:1,x:0,duration:.5,stagger:.15},6.5)
+    .from(".lg",{x:20,duration:.5,stagger:.15},6.5)
+    .to("#s3",{opacity:0,y:-20,duration:.5,ease:"power2.in"},8.0);
+
+  // Scene 4: 8.5 - 10
+  tl.set("#s4",{opacity:1},8.5)
+    .from("#bigtitle",{scale:.8,opacity:0,y:30,duration:.9,ease:"expo.out"},8.5)
+    .from("#r4",{scaleX:0,duration:.6},8.9)
+    .to("#bigtitle",{color:"#5eead4",duration:.6},9.0)
+    .to({}, {duration:.01},9.99);
+
+  // Fit stage to viewport
+  function fit(){var s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById("stage").style.transform="scale("+s+")";}
+  addEventListener("resize",fit);fit();
+})();
+</script>
+</body>
+</html>

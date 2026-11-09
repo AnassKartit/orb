@@ -1,0 +1,12 @@
+motion "Q4 Recap" 1280x720 11s bg=slate
+  scene 3s
+    title "Q4 is up 18%"
+    sub "Our best quarter yet" at=0.7
+  scene 3s
+    count "Revenue" $1.2M dur=1.6
+    bars 12 18 15 22 30 28
+  scene 3s
+    line 3 5 4 8 7 12 10 14
+    donut web=52 app=31 api=17
+  scene 2s
+    title "Thank you" in=pop

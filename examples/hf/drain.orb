@@ -1,0 +1,3 @@
+motion "Drain" 1080x600 3s
+  rect box=360,180,360,200 color=#7c5cff radius=24
+    drain at=0.4 dir=r dur=2.3 ease=linear

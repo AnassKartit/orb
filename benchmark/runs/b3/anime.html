@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FY Recap</title>
+<style>
+  :root { --bg:#0b1020; --card:#131a30; --ink:#f2f5ff; --mute:#8f9bbd; --a:#4f8cff; --b:#2dd4bf; --c:#f5b942; --grid:#243050; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { background:#05070f; width:100%; height:100%; overflow:hidden; }
+  body { display:flex; align-items:center; justify-content:center; font-family:'Segoe UI',Inter,Helvetica,Arial,sans-serif; color:var(--ink); }
+  #stage { position:relative; width:1280px; height:720px; flex:none; overflow:hidden;
+    background:radial-gradient(900px 500px at 20% 10%, #172354 0%, transparent 60%), radial-gradient(800px 500px at 90% 100%, #0f3a3f 0%, transparent 55%), var(--bg); }
+  .scene { position:absolute; inset:0; opacity:0; }
+  #s1 { opacity:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .kicker { font-size:20px; letter-spacing:.35em; color:var(--b); text-transform:uppercase; margin-bottom:22px; }
+  .big { font-size:120px; font-weight:800; letter-spacing:-.03em; line-height:1; }
+  .sub { font-size:34px; color:var(--mute); margin-top:26px; font-weight:400; }
+  .rule { width:140px; height:4px; border-radius:2px; background:linear-gradient(90deg,var(--a),var(--b)); margin-top:30px; }
+  .lbl { font-size:22px; letter-spacing:.3em; text-transform:uppercase; color:var(--mute); }
+  #s2 .head { position:absolute; top:44px; left:0; right:0; text-align:center; }
+  #counter { font-size:130px; font-weight:800; letter-spacing:-.03em; line-height:1.05; background:linear-gradient(90deg,var(--a),var(--b)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #bars { position:absolute; left:290px; top:300px; width:700px; height:360px; display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid var(--grid); }
+  .col { width:130px; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; position:relative; }
+  .bar { width:100%; border-radius:10px 10px 0 0; background:linear-gradient(180deg,#5b86d6,#33508f); transform-origin:50% 100%; transform:scaleY(0); }
+  .bar.best { background:linear-gradient(180deg,#ffd77a,var(--c)); box-shadow:0 0 40px rgba(245,185,66,.45); }
+  .val { font-size:26px; font-weight:700; margin-bottom:10px; opacity:0; }
+  .qn { position:absolute; bottom:-40px; font-size:22px; color:var(--mute); }
+  .badge { position:absolute; top:-6px; left:50%; margin-left:-48px; width:96px; text-align:center; font-size:14px; font-weight:700; letter-spacing:.15em; color:#241a00; background:var(--c); border-radius:20px; padding:5px 0; opacity:0; }
+  .cap { position:absolute; left:290px; top:268px; font-size:18px; color:var(--mute); }
+  .card { position:absolute; top:130px; height:520px; background:var(--card); border:1px solid var(--grid); border-radius:22px; opacity:0; }
+  #cardL { left:60px; width:660px; } #cardR { left:750px; width:470px; }
+  .ct { position:absolute; left:32px; top:26px; font-size:26px; font-weight:700; }
+  .cs { position:absolute; left:32px; top:62px; font-size:16px; color:var(--mute); }
+  #s3 .ttl { position:absolute; top:40px; left:60px; font-size:46px; font-weight:800; letter-spacing:-.02em; }
+  #legend { position:absolute; left:50px; bottom:36px; width:380px; }
+  .lg { display:flex; align-items:center; font-size:22px; margin-top:12px; opacity:0; }
+  .lg i { width:16px; height:16px; border-radius:5px; margin-right:14px; }
+  .lg b { margin-left:auto; font-weight:700; }
+  #s4 { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  svg text { font-family:inherit; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="scene" id="s1">
+    <div class="kicker" id="k1">Fiscal Year</div>
+    <div class="big" id="t1">FY Recap</div>
+    <div class="rule" id="r1"></div>
+    <div class="sub" id="st1">Growth in every quarter</div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div class="head">
+      <div class="lbl">Revenue</div>
+      <div id="counter">$0.0M</div>
+    </div>
+    <div class="cap">Quarterly revenue ($M)</div>
+    <div id="bars"></div>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="ttl">Momentum &amp; Mix</div>
+    <div class="card" id="cardL">
+      <div class="ct">Monthly growth</div><div class="cs">Percent, month over month</div>
+      <svg id="line" width="660" height="520" viewBox="0 0 660 520" style="position:absolute;left:0;top:0"></svg>
+    </div>
+    <div class="card" id="cardR">
+      <div class="ct">Revenue by region</div><div class="cs">Share of total, %</div>
+      <svg id="donut" width="470" height="300" viewBox="0 0 470 300" style="position:absolute;left:0;top:80px"></svg>
+      <div id="legend"></div>
+    </div>
+  </div>
+
+  <div class="scene" id="s4">
+    <div class="kicker">FY Recap</div>
+    <div class="big" id="t4">Thank you</div>
+    <div class="rule"></div>
+  </div>
+</div>
+
+<script type="module">
+import { animate, createTimeline, stagger, createDrawable, createSpring, utils } from 'https://cdn.jsdelivr.net/npm/animejs@4/+esm';
+
+const NS = 'http://www.w3.org/2000/svg';
+
+/* ---------- Bars ---------- */
+const q = [0.6, 0.8, 0.9, 1.1];
+const bars = document.getElementById('bars');
+q.forEach((v, i) => {
+  const best = i === 3;
+  const h = Math.round(v / 1.1 * 250);
+  const col = document.createElement('div');
+  col.className = 'col';
+  col.innerHTML = `${best ? '<div class="badge">BEST</div>' : ''}<div class="val">$${v.toFixed(1)}M</div><div class="bar${best ? ' best' : ''}" style="height:${h}px"></div><div class="qn">Q${i + 1}</div>`;
+  bars.appendChild(col);
+});
+// place the BEST badge just above the value label of Q4
+const badge = bars.querySelector('.badge');
+badge.style.top = 'auto';
+badge.style.bottom = (Math.round(1.1 / 1.1 * 250) + 50) + 'px';
+
+/* ---------- Line chart ---------- */
+const g = [2, 3, 3, 5, 4, 6, 7, 9];
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+const L = { x0: 70, x1: 610, y0: 440, y1: 150 };
+const px = i => L.x0 + (L.x1 - L.x0) * i / 7;
+const py = v => L.y0 - (L.y0 - L.y1) * v / 10;
+const line = document.getElementById('line');
+let s = '';
+[0, 2, 4, 6, 8, 10].forEach(v => {
+  s += `<line x1="${L.x0}" x2="${L.x1}" y1="${py(v)}" y2="${py(v)}" stroke="#243050" stroke-width="1"/><text x="${L.x0 - 14}" y="${py(v) + 5}" fill="#8f9bbd" font-size="14" text-anchor="end">${v}%</text>`;
+});
+months.forEach((m, i) => { s += `<text x="${px(i)}" y="${L.y0 + 30}" fill="#8f9bbd" font-size="15" text-anchor="middle">${m}</text>`; });
+// smooth path (Catmull-Rom to Bezier)
+const P = g.map((v, i) => [px(i), py(v)]);
+let d = `M${P[0][0]},${P[0][1]}`;
+for (let i = 0; i < P.length - 1; i++) {
+  const p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2;
+  const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+  const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+  d += ` C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]}`;
+}
+s += `<defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset="1" stop-color="#2dd4bf"/></linearGradient>
+<linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2dd4bf" stop-opacity=".28"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></linearGradient></defs>`;
+s += `<path id="area" d="${d} L${L.x1},${L.y0} L${L.x0},${L.y0} Z" fill="url(#fg)" opacity="0"/>`;
+s += `<path id="lp" d="${d}" fill="none" stroke="url(#lg)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`;
+P.forEach((p, i) => { s += `<circle class="dot" cx="${p[0]}" cy="${p[1]}" r="7" fill="#0b1020" stroke="#2dd4bf" stroke-width="3" opacity="0"/>`; });
+s += `<text id="endlbl" x="${P[7][0]}" y="${P[7][1] - 20}" fill="#f2f5ff" font-size="22" font-weight="700" text-anchor="middle" opacity="0">9%</text>`;
+line.innerHTML = s;
+
+/* ---------- Donut ---------- */
+const regions = [['EMEA', 45, '#4f8cff'], ['Americas', 35, '#2dd4bf'], ['APAC', 20, '#f5b942']];
+const donut = document.getElementById('donut');
+const cx = 235, cy = 140, r = 90;
+let ds = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1b2442" stroke-width="34"/>`;
+let cum = 0;
+regions.forEach(([n, v, c]) => {
+  const rot = cum * 3.6 - 90;
+  ds += `<circle class="seg" data-f="${v / 100}" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="34" transform="rotate(${rot} ${cx} ${cy})"/>`;
+  cum += v;
+});
+ds += `<text id="dc" x="${cx}" y="${cy + 6}" text-anchor="middle" fill="#f2f5ff" font-size="34" font-weight="800" opacity="0">100%</text>
+<text id="dc2" x="${cx}" y="${cy + 30}" text-anchor="middle" fill="#8f9bbd" font-size="14" opacity="0">of revenue</text>`;
+donut.innerHTML = ds;
+const legend = document.getElementById('legend');
+regions.forEach(([n, v, c]) => {
+  legend.insertAdjacentHTML('beforeend', `<div class="lg"><i style="background:${c}"></i>${n}<b>${v}%</b></div>`);
+});
+
+/* ---------- Counter ---------- */
+const counter = document.getElementById('counter');
+const cv = { v: 0 };
+
+/* ---------- Timeline (10s) ---------- */
+const tl = createTimeline({ defaults: { ease: 'outCubic' }, autoplay: true });
+
+// Scene 1: 0 - 2.4s
+tl.add('#k1', { opacity: [0, 1], translateY: [20, 0], duration: 600 }, 150)
+  .add('#t1', { opacity: [0, 1], translateY: [40, 0], scale: [0.92, 1], duration: 900, ease: 'outExpo' }, 300)
+  .add('#r1', { scaleX: [0, 1], duration: 700, ease: 'outExpo' }, 800)
+  .add('#st1', { opacity: [0, 1], translateY: [24, 0], duration: 800 }, 1000)
+  .add('#s1', { opacity: [1, 0], duration: 400, ease: 'inOutQuad' }, 2300);
+
+// Scene 2: 2.6 - 5.2s
+tl.add('#s2', { opacity: [0, 1], duration: 400 }, 2600)
+  .add('#s2 .head', { translateY: [-24, 0], duration: 700 }, 2600)
+  .add(cv, { v: [0, 3.4], duration: 1500, ease: 'outExpo', onUpdate: () => { counter.textContent = '$' + cv.v.toFixed(1) + 'M'; } }, 2800)
+  .add('#s2 .cap', { opacity: [0, 1], duration: 400 }, 3100)
+  .add('#s2 .bar', { scaleY: [0, 1], duration: 900, delay: stagger(130), ease: 'outExpo' }, 3200)
+  .add('#s2 .val', { opacity: [0, 1], translateY: [10, 0], duration: 500, delay: stagger(130) }, 3700)
+  .add('#s2 .qn', { opacity: [0, 1], duration: 400, delay: stagger(100) }, 3400)
+  .add('#s2 .badge', { opacity: [0, 1], scale: [0.6, 1], duration: 600, ease: createSpring({ stiffness: 220, damping: 12 }) }, 4300)
+  .add('#s2 .bar.best', { scaleY: [1, 1.03, 1], duration: 600, ease: 'inOutSine' }, 4400)
+  .add('#s2', { opacity: [1, 0], duration: 400, ease: 'inOutQuad' }, 5200);
+
+// Scene 3: 5.6 - 8.2s
+tl.add('#s3', { opacity: [0, 1], duration: 300 }, 5600)
+  .add('#s3 .ttl', { opacity: [0, 1], translateX: [-24, 0], duration: 600 }, 5600)
+  .add('#cardL', { opacity: [0, 1], translateY: [30, 0], duration: 600 }, 5750)
+  .add('#cardR', { opacity: [0, 1], translateY: [30, 0], duration: 600 }, 5900)
+  .add('#area', { opacity: [0, 1], duration: 900 }, 6500)
+  .add(createDrawable('#lp'), { draw: ['0 0', '0 1'], duration: 1400, ease: 'inOutQuad' }, 6200)
+  .add('#line .dot', { opacity: [0, 1], scale: [0, 1], duration: 350, delay: stagger(170) }, 6300)
+  .add('#endlbl', { opacity: [0, 1], translateY: [8, 0], duration: 400 }, 7500);
+
+const segs = utils.$('#donut .seg');
+let acc = 0;
+segs.forEach((el, i) => {
+  const f = parseFloat(el.dataset.f);
+  tl.add(createDrawable(el), { draw: ['0 0', '0 1'].map((x, k) => k ? `0 ${f}` : x), duration: 650, ease: 'inOutQuad' }, 6300 + i * 400);
+});
+tl.add('#dc', { opacity: [0, 1], duration: 400 }, 7300)
+  .add('#dc2', { opacity: [0, 1], duration: 400 }, 7300)
+  .add('#legend .lg', { opacity: [0, 1], translateX: [20, 0], duration: 450, delay: stagger(150) }, 6500)
+  .add('#s3', { opacity: [1, 0], duration: 400, ease: 'inOutQuad' }, 8200);
+
+// Scene 4: 8.6 - 10s
+tl.add('#s4', { opacity: [0, 1], duration: 400 }, 8600)
+  .add('#s4 .kicker', { opacity: [0, 1], translateY: [16, 0], duration: 500 }, 8650)
+  .add('#t4', { opacity: [0, 1], translateY: [30, 0], scale: [0.94, 1], duration: 900, ease: 'outExpo' }, 8750)
+  .add('#s4 .rule', { scaleX: [0, 1], duration: 600, ease: 'outExpo' }, 9150);
+
+// initial hidden states for staggered elements
+utils.set('#s4 .kicker, #t4, #k1, #t1, #st1', { opacity: 0 });
+</script>
+</body>
+</html>

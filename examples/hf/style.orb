@@ -1,0 +1,5 @@
+motion "Presets and drift" 16:9 6s
+  style label = size=70 weight=800 bg=#182432 radius=12 pad=12,18 in=slide-l out=fade drift=on
+  style accent = style=label color=#c6f47b in=pop
+  text "Reusable style" style=label box=200,250,1400,150
+  text "Explicit overrides" style=accent at=0 box=200,500,1400,150

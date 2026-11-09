@@ -1,0 +1,14 @@
+motion "Hoot" 1280x720 16s accent=#58cc02 mode=light font=rounded
+  scene 16s
+    stage bg="#bfe6ff,#f4fbff"
+      mascot "Hoot" color=#58cc02 x=0.5 size=1.1
+      act "Hoot" look to=left at=0.4 dur=1.2
+      act "Hoot" wave at=1.8 dur=1.8
+      act "Hoot" feel to=happy at=3.6 dur=0.5
+      act "Hoot" talk at=4.2 dur=2.4
+      act "Hoot" feel to=surprised at=7 dur=0.3
+      act "Hoot" cheer at=7.6 dur=2.4
+      act "Hoot" feel to=sad at=10.6 dur=0.8
+      act "Hoot" feel to=sleepy at=13 dur=1.5
+      camera push=1.25 at=3 dur=3
+      camera pan=-6 at=9 dur=5

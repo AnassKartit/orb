@@ -1,0 +1,3 @@
+motion "Audio" 640x360 2s
+  audio "assets/tone.wav" dur=2 volume=0.7 trim=0 fade=0.2,0.3
+  text "Voice bus + fades" at=0 dur=2 box=60,130,520,90 size=40

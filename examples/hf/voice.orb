@@ -1,0 +1,5 @@
+motion "Voice clocks" 16:9 @end voice="assets/voice"
+  rect at=0 color=#0b0f17
+  text "Line start" at=@v3 until=@next(v3) box=120,200,1500,100
+  text "One shot" at=@v3"one SHOT"+0.2 until=@v4-0.1 box=120,400,1500,100
+    to at=@v3"one shot"+0.3 dur=.2 x=30

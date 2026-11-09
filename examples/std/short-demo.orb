@@ -1,0 +1,15 @@
+import "orb:std/short" as s
+motion "Std short demo" 9:16 8s
+  s.backdrop
+  s.hook "ONE FILE.<br>*THREE* OUTPUTS."
+  s.caption "VIDEOS," at=.6 dur=1
+  s.caption "DECKS, AND" at=1.6 dur=1.2 times="0,.4"
+  s.caption "INTERACTIVE." at=2.8 dur=1.2
+    shake at=.1 dur=.3 x=10 times=3
+  s.chip "READ" at=3 x=60 y=820 w=200 dur=5
+  s.chip "BUILD" at=3.3 x=290 y=820 w=220 dur=4.7 color=#FFE600
+  s.badge "25x fewer tokens" at=4 dur=4 y=.5
+  s.stat "154" "tokens for the same brief" at=4.6 dur=3.4 y=.16
+    count from=3892 to=154 dur=1.2 format="{n:,}"
+  s.nameplate "Anass Kartit" "AI & Cloud Architect" at=.4 dur=4
+  s.beat 2.8

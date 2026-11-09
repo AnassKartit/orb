@@ -1,0 +1,9 @@
+node_modules
+node_modules/
+out/
+.DS_Store
+examples/**/*.html
+!examples/hf/compositions/*.html
+benchmark/runs/**/orb*.html
+.orb-build-*/
+.orb-preview-*/

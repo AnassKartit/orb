@@ -1,0 +1,8 @@
+def plate(name, at)
+  group at={at} dur=1 box=160,180,760,180
+    rect at=0 color=#7c5cff radius=24
+    text "{name}" at=0 box=20,30,720,120 size=64 align=center
+      wipe at=0 dur=0.5 dir=r
+motion "Reusable" 1080x600 2s
+  plate "First" 0
+  plate "Second" 1

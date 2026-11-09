@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hiring Update</title>
+<style>
+  html,body{margin:0;height:100%;background:#05070d;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center}
+  #stage{position:relative;width:1280px;height:720px;overflow:hidden;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#eef2ff;
+    background:radial-gradient(900px 600px at 20% 10%,#1b2447 0%,transparent 60%),radial-gradient(800px 600px at 90% 100%,#2a1747 0%,transparent 60%),#0a0e1a;
+    transform-origin:center center}
+  .abs{position:absolute}
+  .scene{position:absolute;inset:0;opacity:0}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  h1{margin:0;font-size:104px;font-weight:800;letter-spacing:-2px;background:linear-gradient(90deg,#8ab4ff,#c59bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:40px;color:#9fb0d8;margin-top:18px;letter-spacing:1px}
+  .label{font-size:22px;color:#8fa0c8;text-transform:uppercase;letter-spacing:4px}
+  .big{font-size:150px;font-weight:800;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+  .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px}
+  .legend div{display:flex;align-items:center;font-size:26px;margin:14px 0;opacity:0}
+  .legend i{width:20px;height:20px;border-radius:6px;margin-right:16px;display:inline-block}
+  .legend b{margin-left:auto;padding-left:40px;color:#9fb0d8;font-weight:600}
+  svg text{font-family:'Segoe UI',Helvetica,Arial,sans-serif}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="scene center" id="s1">
+    <h1 id="t1">Hiring Update</h1>
+    <div class="sub" id="t2">Team grew 30%</div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div class="abs" style="left:0;right:0;top:50px;text-align:center">
+      <div class="label">New hires</div>
+      <div class="big" id="count">0</div>
+    </div>
+    <svg class="abs" style="left:240px;top:290px" width="800" height="400" viewBox="0 0 800 400">
+      <g id="bars"></g>
+    </svg>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="abs label" style="left:70px;top:44px">Hires by department</div>
+    <div class="abs card" style="left:60px;top:90px;width:700px;height:570px"></div>
+    <svg class="abs" style="left:80px;top:110px" width="360" height="360" viewBox="0 0 360 360" id="donut"></svg>
+    <div class="abs legend" id="legend" style="left:470px;top:160px;width:260px"></div>
+    <div class="abs label" style="left:810px;top:44px">Open roles</div>
+    <div class="abs card" style="left:800px;top:90px;width:420px;height:570px"></div>
+    <svg class="abs" style="left:820px;top:200px" width="380" height="360" viewBox="0 0 380 360" id="line"></svg>
+  </div>
+
+  <div class="scene center" id="s4">
+    <h1>Welcome aboard</h1>
+  </div>
+</div>
+
+<script type="module">
+import { animate, createTimeline, stagger, createDrawable, createSpring, utils } from 'https://cdn.jsdelivr.net/npm/animejs@4/+esm';
+
+const NS='http://www.w3.org/2000/svg';
+const el=(n,a={},p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+
+// fit stage to window
+const stage=document.getElementById('stage');
+const fit=()=>{const s=Math.min(innerWidth/1280,innerHeight/720);stage.style.transform=`scale(${s})`;};
+fit();addEventListener('resize',fit);
+
+// bar chart
+const months=['Mar','Apr','May','Jun','Jul'],vals=[2,4,6,7,5],best=3;
+const bars=document.getElementById('bars');
+const bw=100,gap=40,base=340,unit=44;
+vals.forEach((v,i)=>{
+  const x=i*(bw+gap)+20,h=v*unit;
+  const r=el('rect',{x,y:base-h,width:bw,height:h,rx:12,fill:i===best?'#ffb84d':'#5b8cff',class:'bar',style:'transform-box:fill-box;transform-origin:bottom;transform:scaleY(0)'},bars);
+  el('text',{x:x+bw/2,y:base+34,'text-anchor':'middle',fill:'#9fb0d8','font-size':24},bars);
+  bars.lastChild.textContent=months[i];
+  const t=el('text',{x:x+bw/2,y:base-h-12,'text-anchor':'middle',fill:i===best?'#ffb84d':'#dfe7ff','font-size':26,'font-weight':700,class:'bv',opacity:0},bars);
+  t.textContent=v;
+});
+
+// donut
+const data=[['Engineering',45,'#5b8cff'],['Sales',30,'#34d3a0'],['Design',15,'#c59bff'],['Ops',10,'#ffb84d']];
+const dn=document.getElementById('donut');
+const R=130,C=2*Math.PI*R;let acc=0;
+el('circle',{cx:180,cy:180,r:R,fill:'none',stroke:'rgba(255,255,255,.06)','stroke-width':44},dn);
+const segs=data.map(([n,v,c])=>{
+  const len=C*v/100;
+  const ci=el('circle',{cx:180,cy:180,r:R,fill:'none',stroke:c,'stroke-width':44,
+    'stroke-dasharray':`0 ${C}`,'stroke-dashoffset':-acc,transform:'rotate(-90 180 180)'},dn);
+  const o={ci,len,acc};acc+=len;return o;
+});
+const tot=el('text',{x:180,y:192,'text-anchor':'middle',fill:'#fff','font-size':44,'font-weight':800},dn);tot.textContent='24';
+const lg=document.getElementById('legend');
+data.forEach(([n,v,c])=>{const d=document.createElement('div');d.innerHTML=`<i style="background:${c}"></i>${n}<b>${v}%</b>`;lg.appendChild(d);});
+
+// line
+const ln=document.getElementById('line');
+const open=[18,15,14,10,8],lx=i=>30+i*80,ly=v=>300-(v-6)*18;
+[18,14,10,6].forEach(g=>{el('line',{x1:20,x2:360,y1:ly(g),y2:ly(g),stroke:'rgba(255,255,255,.08)'},ln);});
+let d='';
+const pts=open.map((v,i)=>[lx(i),ly(v)]);
+d=`M${pts[0][0]},${pts[0][1]}`;
+for(let i=0;i<pts.length-1;i++){const [x0,y0]=pts[i],[x1,y1]=pts[i+1],mx=(x0+x1)/2;d+=` C${mx},${y0} ${mx},${y1} ${x1},${y1}`;}
+const path=el('path',{d,fill:'none',stroke:'#34d3a0','stroke-width':5,'stroke-linecap':'round'},ln);
+const dots=pts.map(([x,y],i)=>{
+  const c=el('circle',{cx:x,cy:y,r:8,fill:'#0a0e1a',stroke:'#34d3a0','stroke-width':4,opacity:0},ln);
+  const t=el('text',{x,y:y-18,'text-anchor':'middle',fill:'#dfe7ff','font-size':22,'font-weight':700,opacity:0},ln);t.textContent=open[i];
+  const m=el('text',{x,y:340,'text-anchor':'middle',fill:'#9fb0d8','font-size':20},ln);m.textContent=months[i];
+  return [c,t];
+});
+const drawable=createDrawable(path);
+
+// timeline (9s)
+const tl=createTimeline({defaults:{ease:'outExpo'}});
+const fade=(sel,t0,t1)=>{
+  tl.add(sel,{opacity:[0,1],duration:500,ease:'outQuad'},t0);
+  tl.add(sel,{opacity:0,duration:500,ease:'inQuad'},t1);
+};
+// Scene 1: 0-2.2
+tl.add('#s1',{opacity:[0,1],duration:400,ease:'outQuad'},0);
+tl.add('#t1',{translateY:[40,0],scale:[.92,1],opacity:[0,1],duration:1100},100);
+tl.add('#t2',{translateY:[30,0],opacity:[0,1],duration:900},600);
+tl.add('#s1',{opacity:0,duration:500,ease:'inQuad'},1900);
+
+// Scene 2: 2.2-5.0
+tl.add('#s2',{opacity:[0,1],duration:400,ease:'outQuad'},2200);
+const cnt={v:0};
+tl.add(cnt,{v:24,duration:1800,ease:'outCubic',onUpdate:()=>{document.getElementById('count').textContent=Math.round(cnt.v);}},2400);
+tl.add('.bar',{transform:['scaleY(0)','scaleY(1)'],duration:900,delay:stagger(120)},2700);
+tl.add('.bv',{opacity:[0,1],duration:400,delay:stagger(120)},3300);
+tl.add('.bar:nth-child(1)',{},2700); // no-op anchor
+tl.add('#s2',{opacity:0,duration:500,ease:'inQuad'},4600);
+
+// Scene 3: 5.0-8.0
+tl.add('#s3',{opacity:[0,1],duration:400,ease:'outQuad'},4900);
+segs.forEach((s,i)=>{
+  tl.add(s.ci,{'stroke-dasharray':[`0 ${C}`,`${s.len-3} ${C-s.len+3}`],duration:900,ease:'inOutCubic'},5000+i*250);
+});
+tl.add('#legend div',{opacity:[0,1],translateX:[-20,0],duration:600,delay:stagger(200)},5100);
+tl.add(drawable,{draw:['0 0','0 1'],duration:1500,ease:'inOutCubic'},5300);
+dots.forEach(([c,t],i)=>{
+  tl.add([c,t],{opacity:[0,1],duration:300,ease:'outQuad'},5400+i*300);
+});
+tl.add('#s3',{opacity:0,duration:500,ease:'inQuad'},7500);
+
+// Scene 4: 8-9
+tl.add('#s4',{opacity:[0,1],duration:500,ease:'outQuad'},7900);
+tl.add('#s4 h1',{translateY:[30,0],scale:[.9,1],duration:1000},7900);
+</script>
+</body>
+</html>

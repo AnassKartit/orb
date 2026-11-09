@@ -1,0 +1,12 @@
+motion "Sprint 24" 1280x720 10s bg=slate
+  scene 2s
+    title "Sprint 24"
+    sub "Shipped on time"
+  scene 3s
+    count "Story points" 86
+    bars 12 20 17 24 13
+  scene 3s
+    line 40 34 29 22 15 9 0
+    donut Done=70 Review=20 Todo=10
+  scene 2s
+    title "Ship it"

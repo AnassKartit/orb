@@ -1,0 +1,3 @@
+motion "Karaoke" 1080x600 3s
+  text "One two three" box=160,180,800,150 size=72 align=center
+    karaoke at=0,0.8,1.6 color=#ffe600

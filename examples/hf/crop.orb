@@ -1,0 +1,2 @@
+motion "Crop" 1080x600 2s assets=assets
+  video "sample.mp4" box=160,80,760,440 crop=0.2,0.1,0.6,0.8 fit=fill

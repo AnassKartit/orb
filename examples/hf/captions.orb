@@ -1,0 +1,2 @@
+motion "Captions" 640x360 2.2s
+  captions "assets/words.json" box=60,130,520,130 size=36 highlight=#ffe600 max-words=2 dur=2.2

@@ -1,0 +1,2 @@
+motion "Restarting video" 16:9 7s
+  video "assets/sample.mp4" loop=on fit=cover pos=50%,62% trim=.2 rate=1.5 box=120,120,1680,840

@@ -1,0 +1,12 @@
+motion "Launch Week" 1280x720 10s bg=slate
+  scene 2.2s
+    title "Launch Week" in=rise
+    sub "Signups beat the plan" in=fade
+  scene 3.2s
+    count "Signups" 4800 in=pop
+    bars 120 340 560 800 1100 980 900 in=grow stagger=0.08
+  scene 3s
+    line 62 58 55 54 53 52 in=draw
+    donut ios=48 android=36 web=16 in=sweep
+  scene 1.6s
+    title "Thank you" in=blur

@@ -1,0 +1,16 @@
+motion "Record tables" 16:9 4s
+  data models
+    name="Orb" color="#c6f47b"
+    name="Frames" color="#7cc4ff"
+  repeat models as m
+    text "{i}: {m.name}" at=0 box={120+i*650},200,600,100 color={m.color}
+  data json "assets/records.json"
+  repeat json as m
+    text "{m.name}" at=0 box=120,400,600,100 color={m.color}
+  data csv "assets/records.csv"
+  repeat csv as m
+    text "{m.name}" at=0 box=120,600,1200,100 color={m.color}
+  data compact(name,x)
+    "Inline CSV",120
+  repeat compact as m
+    text "{m.name}" at=0 box={m.x},800,1200,100

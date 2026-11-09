@@ -1,0 +1,35 @@
+{
+  "name": "orb-lang",
+  "version": "1.0.0-beta.1",
+  "type": "commonjs",
+  "bin": {
+    "orb": "src/prism.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.57.0"
+  },
+  "description": "Orb: a small language AI models write to make videos, presentations and interactive animations.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnassKartit/orb.git"
+  },
+  "homepage": "https://www.kartit.net/orb/",
+  "keywords": [
+    "llm",
+    "video",
+    "motion-graphics",
+    "presentations",
+    "dsl",
+    "mcp",
+    "animation"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.js && node tests/golden/build.js",
+    "golden": "node tests/golden/build.js --write",
+    "playground": "node scripts/build-playground.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

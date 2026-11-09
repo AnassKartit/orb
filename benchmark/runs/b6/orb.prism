@@ -1,0 +1,13 @@
+motion "Energy Use" 1280x720 10s bg=slate
+  scene 0-2s
+    eyebrow "SUSTAINABILITY"
+    title "Energy Use"
+    sub "Down 12% this year"
+  scene 2-5s
+    count "Saved" 1,250
+    bars 980 910 870 800 760 720 labels=Q1,Q2,Q3,Q4,Q1,Q2 peak="LOWEST" title="KWH PER QUARTER"
+  scene 5-8.5s
+    line 22 28 35 41 48 55 labels=Q1,Q2,Q3,Q4,Q1,Q2 title="RENEWABLE SHARE %"
+    donut Solar=38 Wind=32 Grid=30 title="CONSUMPTION BY SOURCE"
+  scene 8.5-10s
+    title "Keep going"

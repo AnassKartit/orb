@@ -1,0 +1,2 @@
+motion "Rich text" 16:9 4s
+  text "[img assets/card.svg] *Orb*{color=#c6f47b}<br><b>Bold</b> and <small>small</small>" box=200,200,1400,500 size=96

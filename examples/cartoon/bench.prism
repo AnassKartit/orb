@@ -1,0 +1,12 @@
+motion "Bench Friends" 1280x720 14s accent=#ff7a45 mode=light
+  scene 14s
+    world sky="#cfe9ff,#fff7ef"
+      toy "Milo" skin=#d9a37a shirt=#2f9aa0 hair=#5b3a29 eyes=#ff4fd8 beard=on x=-1.15
+      toy "Pip" skin=#4a2c1f shirt=#e9967a hair=#2b1a12 eyes=#ff5a3c flower=on x=1.2
+      act "Milo" talk at=0.8 dur=3
+      act "Pip" nod at=2.2 dur=1.4
+      act "Pip" talk at=4.2 dur=3
+      act "Milo" laugh at=7.6 dur=2.4
+      act "Pip" wave at=10.5 dur=2
+      camera push=1.3 at=1 dur=5
+      camera orbit=16 at=7 dur=5

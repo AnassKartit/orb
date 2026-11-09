@@ -1,0 +1,32 @@
+# Click the preview, then click or press the arrow keys to move through the slides.
+motion "Orb presentation" 1280x720 bg=ms numbers=on present=on
+  scene 5s
+    heading "Decks written as text"
+    lede "Six slides in about 30 lines. Click, or press the right arrow, to go on."
+    banner "Each click plays the next build"
+  scene 5s
+    heading "One file, three outputs"
+    row
+      card icon=file "A page that plays in any browser" label="Web"
+      card icon=share "A slideshow with clicks and arrow keys" label="Deck"
+      card icon=gear "Frames for an MP4 render" label="Video"
+  scene 5s
+    heading "What a slide is made of"
+    panel header="Building blocks"
+      grid 2
+        card icon=file "heading, lede and note"
+        card icon=clipboard "bullets, steps and outcome"
+        card icon=users "row, col, grid and panel"
+        card icon=check "card, banner and table"
+  scene 5s
+    heading "How a deck gets made"
+    steps "Write the outline as scenes" "Let the compiler lay out each slide" "Present it, or export one HTML file"
+    outcome "One file to keep and share"
+  scene 5s
+    heading "Why it stays short"
+    lede "The compiler picks the layout, the spacing and the build order. You write the words."
+    banner "No coordinates, no keyframes"
+  scene 5s
+    heading "Your turn"
+    lede "Change a line on the left. The deck rebuilds and starts again."
+    banner "Export gives you this deck as one HTML file"

@@ -1,0 +1,39 @@
+# orb:std/charts : charts written in Orb on rect and text. Nothing here is built into the compiler:
+# copy a def, change it, or write your own next to it.
+let u = min(W, H)/1080
+# Vertical bars. values is a list; the tallest bar takes the peak colour and an optional badge.
+def bars(values, labels=[], at=0, dur=5, x=.12, y=.2, w=.76, h=.5, color=#7CC4FF, peak=#FFE600, badge='', gap=.28, stagger=.09, grow=.7, size=34, unit='', ink=#E6EBF5)
+  let n = len(values)
+  let top = max(values)
+  let bw = W*w/n
+  let full = H*h
+  let head = size*u*3.6
+  group at={at} dur={dur} box={W*x},{H*y},{W*w},{head+full+size*u*2.2}
+    rect at=0 box=0,{head+full},{W*w},{round(3*u)} color=#ffffff33
+    repeat values as v
+      rect at={i*stagger} box={i*bw+bw*gap/2},{head+full*(1-v/top)},{bw*(1-gap)},{full*v/top} color={v == top ? peak : color} radius={round(10*u)} origin="50% 100%"
+        to dur={grow} scale-y=1 from=0 ease=back.out(1.4)
+      text "{commas(v)}{unit}" at={i*stagger+grow*.6} box={i*bw},{head+full*(1-v/top)-size*u*1.5},{bw},{size*u*1.4} size={size*u} weight=800 align=center color={v == top ? peak : ink} in=rise in-dur=.3
+      if len(labels) > i
+        text "{labels[i]}" at={i*stagger} box={i*bw},{head+full+size*u*.5},{bw},{size*u*1.4} size={size*u} weight=600 align=center color=#9AA4BF in=fade
+    if badge != ''
+      text "{badge}" at={argmax(values)*stagger+grow} box={argmax(values)*bw},0,{bw},{size*u*1.7} size={size*u} weight=900 align=center color=#0B0F1A bg={peak} radius={round(10*u)} pad="{round(8*u)} {round(14*u)}"
+        pop dur=.3 scale=.4 ease=back.out(2.6)
+    slot
+# Horizontal race: one row per value. best='max' highlights the largest, best='min' the smallest
+# (for "fewer is better" comparisons such as tokens or cost).
+def race(values, labels, at=0, dur=5, x=.08, y=.22, w=.84, row=120, color=#7CC4FF, peak=#FFE600, best='max', badge='', unit='', run=1.6, size=40, ink=#E6EBF5)
+  let top = max(values)
+  let win = best == 'min' ? min(values) : top
+  let name = size*u*7.4
+  let track = W*w-name-size*u*8
+  group at={at} dur={dur} box={W*x},{H*y},{W*w},{len(values)*row*u}
+    repeat values as v
+      text "{labels[i]}" at={i*.12} box=0,{i*row*u},{name},{row*u*.7} size={size*u} weight=800 color={v == win ? peak : ink} in=slide-l
+      rect at={i*.12} box={name},{i*row*u+row*u*.12},{max(track*v/top, row*u*.5)},{row*u*.5} color={v == win ? peak : color} radius={round(row*u*.25)} origin="0% 50%"
+        to dur={max(run*v/top, .2)} scale-x=1 from=0 ease=power2.out
+      text "{commas(v)}{unit}" at={i*.12+max(run*v/top, .2)} box={name+max(track*v/top, row*u*.5)+size*u*.4},{i*row*u},{size*u*7.4},{row*u*.7} size={size*u} weight=900 color={v == win ? peak : ink} in=pop
+      if badge != '' && v == win
+        text "{badge}" at={i*.12+run+.3} box={name+max(track*v/top, row*u*.5)+size*u*7.6},{i*row*u+row*u*.1},{size*u*6},{row*u*.52} size={size*u*.7} weight=900 align=center color=#0B0F1A bg={peak} radius={round(8*u)}
+          pop dur=.3 scale=.4 ease=back.out(2.6)
+    slot

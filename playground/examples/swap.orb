@@ -1,0 +1,8 @@
+motion "Swap the image and the colours" 16:9 6s
+  rect at=0 color=#0b0f1a
+  image "placeholder.svg" at=0 box=120,150,860,780 fit=cover radius=40 border="12px solid #ff2d78" in=pop
+  rect at=.3 box=1090,300,160,14 color=#ff2d78 radius=7
+    wipe dur=.5
+  text "Swap the image<br>and the *colours*" at=.5 box=1090,350,720,240 size=92 weight=900 color=#ffffff emph=#ff2d78 in=rise
+  text "Click a colour or a file name<br>under the editor." at=1.1 box=1090,620,720,110 size=36 weight=600 color=#9aa4bf in=fade
+    pulse at=2.5 dur=.6 scale=1.04 times=1

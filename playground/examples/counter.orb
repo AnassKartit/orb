@@ -1,0 +1,5 @@
+motion "Launch week" 1280x720 6s accent=#0ea5a4
+  scene 6s
+    eyebrow "LAUNCH WEEK"
+    count "Signups" 4800 in=pop
+    bars 120 340 560 800 1100 980 900 labels=Mon,Tue,Wed,Thu,Fri,Sat,Sun peak="BEST DAY" tone=good

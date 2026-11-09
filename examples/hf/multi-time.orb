@@ -1,0 +1,4 @@
+motion "Multi time" 1080x600 4s
+  rect box=360,180,360,200 color=#7c5cff
+    to at=0.4,1.8,3 dur=0.4 rotate=45
+    highlight at=0,1.4,2.8 dur=0.6 box=0,0,360,200

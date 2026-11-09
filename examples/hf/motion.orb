@@ -1,0 +1,2 @@
+motion "Square at 24 fps" 1:1 2s fps=24
+  rect box=100,100,880,880 color=#176b65 dur=2 in=pop out=fade

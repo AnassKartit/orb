@@ -1,0 +1,3 @@
+motion "Wipe" 1080x600 3s
+  rect box=360,180,360,200 color=#7c5cff radius=24
+    wipe at=0.2,1.8 dir=r dur=0.8

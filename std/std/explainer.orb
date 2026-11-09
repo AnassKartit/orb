@@ -1,0 +1,27 @@
+# orb:std/explainer : pieces for text-first explainers. Plain Orb: copy any def and change it.
+let u = min(W, H)/1080
+def kicker(copy, at, dur=4, y=.07, color=#FFE600, x=.06, w=.88, align=center)
+  text "{copy}" at={at} dur={dur} box={W*x},{H*y},{W*w},{56*u} size={30*u} weight=800 align={align} color={color} spacing={5*u}px in=fade out=fade
+def headline(copy, at, dur=4, y=.15, size=104, color=#fff, x=.06, w=.88, align=center, emph=#FFE600)
+  text "{copy}" at={at} dur={dur} box={W*x},{H*y},{W*w},{size*u*2.5} size={size*u} weight=900 align={align} color={color} emph={emph} leading=1.04 height=auto in=rise out=fade
+    slot
+def note(copy, at, dur=4, y=.9, size=32, color=#9AA4BF, x=.06, w=.88, align=center)
+  text "{copy}" at={at} dur={dur} box={W*x},{H*y},{W*w},{size*u*1.6} size={size*u} weight=600 align={align} color={color} in=fade out=fade
+# A code listing. lines is a table with one field t per line; hi marks one line.
+def code(lines, at, dur=6, x=.06, y=.2, w=.5, size=24, hi=-1, face=Menlo, color=#C9D1E8, mark=#FFE600, out=fade)
+  group at={at} dur={dur} box={W*x},{H*y},{W*w},{(len(lines)+1.4)*size*u*1.5} radius={round(18*u)} border="{round(2*u)}px solid #2b3346" bg=#0d1117 shadow="0 {round(30*u)}px {round(80*u)}px #0009" in=lift out={out}
+    repeat lines as l
+      text "{l.t}" at={i*.04} box={size*u},{size*u*.9+i*size*u*1.5},{W*w-size*u*2},{size*u*1.5} size={size*u} font={face} weight=700 color={i == hi ? mark : color} whitespace=pre fit=off in=fade in-dur=.2
+    slot
+# A big number with a label under it. Children of the call animate the number (count, punch).
+def stat(value, label, at, dur=4, x=.1, y=.3, w=.8, size=240, color=#FFE600, ink=#fff)
+  group at={at} dur={dur} box={W*x},{H*y},{W*w},{size*u*1.75} out=fade
+    text "{value}" at=0 box=0,0,{W*w},{size*u*1.12} size={size*u} weight=900 color={color} align=center leading=1
+      pop dur=.3 scale=1.6 ease=back.out(2)
+      slot
+    text "{label}" at=.3 box=0,{size*u*1.18},{W*w},{size*u*.5} size={size*u*.17} weight=700 color={ink} align=center in=rise
+# A pill label.
+def pill(copy, at, x, y, w, dur=4, color=#7CC4FF, size=34)
+  text "{copy}" at={at} dur={dur} box={W*x},{H*y},{W*w},{size*u*2} size={size*u} weight=800 align=center pad="{round(14*u)} {round(20*u)}" color={color} bg=#0B0F1A border="{round(4*u)}px solid {color}" radius={round(20*u)} shadow="0 0 {round(24*u)}px {color}66" out=fade
+    pop dur=.25 scale=.6 ease=back.out(2.4)
+    slot

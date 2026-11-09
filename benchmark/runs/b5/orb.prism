@@ -1,0 +1,13 @@
+motion "Hiring Update" 1280x720 9s bg=slate
+  scene 2s
+    eyebrow "HIRING UPDATE"
+    title "Hiring Update"
+    sub "Team grew 30%"
+  scene 2.5s
+    count "New hires" 24
+    bars 2 4 6 7 5 labels=Mar,Apr,May,Jun,Jul peak="BEST MONTH" title="HIRES PER MONTH"
+  scene 3s
+    donut Engineering=45 Sales=30 Design=15 Ops=10 title="HIRES BY DEPARTMENT"
+    line 18 15 14 10 8 labels=Mar,Apr,May,Jun,Jul title="OPEN ROLES"
+  scene 1.5s
+    title "Welcome aboard"

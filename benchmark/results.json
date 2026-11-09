@@ -1,0 +1,86 @@
+{
+ "rounds": [
+  {
+   "title": "Blind quality, round 5 (player fix, sequential capture, 6 briefs)",
+   "rows": [
+    [
+     "Orb",
+     "4.10",
+     "1.67",
+     "4"
+    ],
+    [
+     "GSAP",
+     "3.47",
+     "2.83",
+     "0"
+    ],
+    [
+     "anime.js v4",
+     "3.30",
+     "2.83",
+     "1"
+    ],
+    [
+     "Plain HTML/CSS/JS",
+     "3.67",
+     "2.67",
+     "1"
+    ]
+   ],
+   "note": "Highest mean is best. Judges are the same model family as the generators; n=6 briefs, so differences under about 0.3 are within noise. Round 4 vs round 5 moved Orb from 3.50 to 4.10 after one small fix, which shows how noisy a single round is."
+  },
+  {
+   "title": "Blind quality, round 4 (before the end-of-video fix)",
+   "rows": [
+    [
+     "Orb",
+     "3.50",
+     "2.83",
+     "1"
+    ],
+    [
+     "GSAP",
+     "4.00",
+     "1.83",
+     "3"
+    ],
+    [
+     "anime.js v4",
+     "3.67",
+     "2.33",
+     "1"
+    ],
+    [
+     "Plain HTML/CSS/JS",
+     "3.50",
+     "3.00",
+     "1"
+    ]
+   ],
+   "note": "Judges flagged Orb replaying after Thank you; fixed by holding the last card."
+  }
+ ],
+ "deck": {
+  "rows": [
+   [
+    "Slides",
+    "22"
+   ],
+   [
+    "Mean SSIM vs PDF page",
+    "0.684"
+   ],
+   [
+    "Best slide",
+    "0.96 (section dividers)"
+   ],
+   [
+    "Worst slide",
+    "0.39 (dense tables)"
+   ]
+  ],
+  "note": "Structure, colours and copy match the source; pixel-exact is not reached (icons and logos are redrawn, tiny text cannot align to the pixel)."
+ },
+ "gates": "orb-test\n  PASS  1 unit tests               pass 14 fail 0\n  PASS  2 examples compile         2 files\n  PASS  3 briefs compile (latest)  6/6 ok; first-attempt files compile 5/6 (informational)\n  PASS  4 render clean             6 pages\n  PASS  5 frame rate               b1/orb.html 26.5fps median 16.7ms; b4/orb.html 32.4fps median 16.7ms\n  PASS  6 tokens vs GSAP           min 14.0x  mean 21.5x over 6 briefs\n  PASS  6b tokens vs anime.js      min 15.7x  mean 24.9x over 6 briefs\n\nALL GATES PASS"
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Energy Use</title>
+<style>
+  html,body{margin:0;height:100%;background:#05080c;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center}
+  #stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(900px 600px at 20% 10%,#12303a 0%,#0a1218 55%,#070b10 100%);font-family:"Segoe UI",Helvetica,Arial,sans-serif;color:#e8f1f2;transform-origin:center center;flex:none}
+  .scene{position:absolute;inset:0;opacity:0}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  h1{margin:0;font-size:116px;font-weight:700;letter-spacing:-2px;background:linear-gradient(90deg,#5eead4,#a3e635);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{margin-top:18px;font-size:42px;color:#9fb8bd;font-weight:400;letter-spacing:.5px}
+  .rule{width:120px;height:4px;border-radius:2px;background:#5eead4;margin-top:34px}
+  .lbl{font-size:22px;letter-spacing:6px;text-transform:uppercase;color:#7f9aa0}
+  #cnt{position:absolute;left:0;right:0;top:34px;text-align:center}
+  #cnt .num{font-size:128px;font-weight:700;line-height:1.05;color:#5eead4;font-variant-numeric:tabular-nums}
+  #cnt .num small{font-size:40px;color:#9fb8bd;font-weight:400;margin-left:12px}
+  .ptitle{position:absolute;font-size:22px;letter-spacing:4px;text-transform:uppercase;color:#7f9aa0;top:96px}
+  svg{position:absolute;left:0;top:0}
+  text{font-family:"Segoe UI",Helvetica,Arial,sans-serif}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <div class="scene center" id="s1">
+    <h1 id="t1">Energy Use</h1>
+    <div class="sub" id="st1">Down 12% this year</div>
+    <div class="rule" id="r1"></div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div id="cnt"><div class="lbl">Saved</div><div class="num"><span id="n">0</span><small>kWh</small></div></div>
+    <svg width="1280" height="720" viewBox="0 0 1280 720" id="bars"></svg>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="ptitle" style="left:90px">Renewable share</div>
+    <div class="ptitle" style="left:700px">Consumption by source</div>
+    <svg width="1280" height="720" viewBox="0 0 1280 720" id="s3svg"></svg>
+  </div>
+
+  <div class="scene center" id="s4">
+    <h1 id="t4">Keep going</h1>
+    <div class="rule" id="r4"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+const NS="http://www.w3.org/2000/svg";
+function el(p,n,a,t){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(t!=null)e.textContent=t;p.appendChild(e);return e}
+
+// fit stage to window
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById('stage').style.transform='scale('+s+')'}
+fit();addEventListener('resize',fit);
+
+// ---- bar chart ----
+const bs=document.getElementById('bars');
+const kwh=[980,910,870,800,760,720], ql=['Q1','Q2','Q3','Q4','Q1','Q2'];
+const base=640, bw=92, gap=140, x0=(1280-(5*gap+bw))/2, maxH=300, maxV=1000;
+el(bs,'line',{x1:x0-30,x2:x0+5*gap+bw+30,y1:base,y2:base,stroke:'#2a3d44','stroke-width':2});
+[250,500,750,1000].forEach(v=>{const y=base-v/maxV*maxH;el(bs,'line',{x1:x0-30,x2:x0+5*gap+bw+30,y1:y,y2:y,stroke:'#16262c','stroke-width':1})});
+const defs=el(bs,'defs',{});
+const g1=el(defs,'linearGradient',{id:'gb',x1:0,y1:0,x2:0,y2:1});
+el(g1,'stop',{offset:0,'stop-color':'#4b6b73'});el(g1,'stop',{offset:1,'stop-color':'#2a424a'});
+const g2=el(defs,'linearGradient',{id:'gh',x1:0,y1:0,x2:0,y2:1});
+el(g2,'stop',{offset:0,'stop-color':'#a3e635'});el(g2,'stop',{offset:1,'stop-color':'#5eead4'});
+const bars=[],vals=[],qs=[];
+kwh.forEach((v,i)=>{
+  const h=v/maxV*maxH,x=x0+i*gap,hi=i===5;
+  const r=el(bs,'rect',{x:x,y:base-h,width:bw,height:h,rx:8,fill:hi?'url(#gh)':'url(#gb)'});
+  r.style.transformOrigin=(x+bw/2)+'px '+base+'px';bars.push(r);
+  vals.push(el(bs,'text',{x:x+bw/2,y:base-h-14,'text-anchor':'middle','font-size':26,'font-weight':600,fill:hi?'#a3e635':'#c5d6d9',opacity:0},v));
+  qs.push(el(bs,'text',{x:x+bw/2,y:base+36,'text-anchor':'middle','font-size':24,fill:'#7f9aa0',opacity:0},ql[i]));
+});
+const lowTag=el(bs,'text',{x:x0+5*gap+bw/2,y:base-720/maxV*maxH-52,'text-anchor':'middle','font-size':18,'letter-spacing':3,fill:'#a3e635',opacity:0},'LOWEST');
+el(bs,'text',{x:x0-30,y:base+78,'font-size':18,fill:'#586f75'},'kWh per quarter');
+
+// ---- scene 3 ----
+const s3=document.getElementById('s3svg');
+// line chart
+const lx0=100,lx1=600,ly0=590,ly1=210,share=[22,28,35,41,48,55];
+const px=i=>lx0+i*(lx1-lx0)/5, py=v=>ly0-(v/60)*(ly0-ly1);
+[0,20,40,60].forEach(v=>{el(s3,'line',{x1:lx0-20,x2:lx1+30,y1:py(v),y2:py(v),stroke:v===0?'#2a3d44':'#16262c','stroke-width':v===0?2:1});el(s3,'text',{x:lx0-34,y:py(v)+6,'text-anchor':'end','font-size':18,fill:'#586f75'},v+'%')});
+const pts=share.map((v,i)=>[px(i),py(v)]);
+let d='M'+pts[0][0]+' '+pts[0][1];
+for(let i=0;i<pts.length-1;i++){
+  const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+  d+=' C'+(p1[0]+(p2[0]-p0[0])/6)+' '+(p1[1]+(p2[1]-p0[1])/6)+' '+(p2[0]-(p3[0]-p1[0])/6)+' '+(p2[1]-(p3[1]-p1[1])/6)+' '+p2[0]+' '+p2[1];
+}
+const area=el(s3,'path',{d:d+' L'+lx1+' '+ly0+' L'+lx0+' '+ly0+' Z',fill:'rgba(94,234,212,.12)',opacity:0});
+const line=el(s3,'path',{d:d,fill:'none',stroke:'#5eead4','stroke-width':6,'stroke-linecap':'round'});
+const L=line.getTotalLength();line.style.strokeDasharray=L;line.style.strokeDashoffset=L;
+const dots=[],dl=[];
+pts.forEach((p,i)=>{
+  const c=el(s3,'circle',{cx:p[0],cy:p[1],r:8,fill:'#0a1218',stroke:'#a3e635','stroke-width':4,opacity:0});c.style.transformOrigin=p[0]+'px '+p[1]+'px';dots.push(c);
+  dl.push(el(s3,'text',{x:p[0],y:p[1]-20,'text-anchor':'middle','font-size':20,'font-weight':600,fill:'#e8f1f2',opacity:0},share[i]+'%'));
+  el(s3,'text',{x:p[0],y:ly0+34,'text-anchor':'middle','font-size':18,fill:'#586f75'},ql[i]);
+});
+// donut
+const cx=860,cy=380,R=100,SW=44,C=2*Math.PI*R;
+const src=[['Solar',38,'#fbbf24'],['Wind',32,'#5eead4'],['Grid',30,'#6b8a93']];
+el(s3,'circle',{cx:cx,cy:cy,r:R,fill:'none',stroke:'#16262c','stroke-width':SW});
+const segs=[];let acc=0;
+src.forEach(s=>{
+  const len=C*s[1]/100;
+  const c=el(s3,'circle',{cx:cx,cy:cy,r:R,fill:'none',stroke:s[2],'stroke-width':SW,'stroke-dasharray':'0 '+C,transform:'rotate('+(-90+acc*3.6)+' '+cx+' '+cy+')'});
+  segs.push([c,len-3]);acc+=s[1];
+});
+const dc=el(s3,'text',{x:cx,y:cy+4,'text-anchor':'middle','font-size':34,'font-weight':700,fill:'#e8f1f2',opacity:0},'100%');
+el(s3,'text',{x:cx,y:cy+32,'text-anchor':'middle','font-size':15,'letter-spacing':3,fill:'#7f9aa0',opacity:0,id:'dsub'},'MIX');
+const leg=[];
+src.forEach((s,i)=>{
+  const y=330+i*52,g=el(s3,'g',{opacity:0});
+  el(g,'rect',{x:1010,y:y-18,width:22,height:22,rx:6,fill:s[2]});
+  el(g,'text',{x:1046,y:y,'font-size':26,fill:'#e8f1f2'},s[0]);
+  el(g,'text',{x:1210,y:y,'text-anchor':'end','font-size':26,'font-weight':700,fill:s[2]},s[1]+'%');
+  leg.push(g);
+});
+
+// ---- timeline ----
+const tl=gsap.timeline({defaults:{ease:'power3.out'}});
+const cnt={v:0},nEl=document.getElementById('n');
+
+// scene 1: 0 - 2.4
+tl.set('#s1',{opacity:1},0)
+  .from('#t1',{y:40,opacity:0,duration:.9,ease:'power3.out'},.15)
+  .from('#st1',{y:24,opacity:0,duration:.8},.6)
+  .from('#r1',{scaleX:0,duration:.7,ease:'power2.inOut'},.9)
+  .to('#s1',{opacity:0,y:-20,duration:.5,ease:'power2.in'},2.1)
+
+// scene 2: 2.5 - 5.3
+  .set('#s2',{opacity:1},2.5)
+  .from('#cnt',{y:-20,opacity:0,duration:.6},2.5)
+  .to(cnt,{v:1250,duration:2.2,ease:'power2.out',onUpdate(){nEl.textContent=Math.round(cnt.v).toLocaleString('en-US')}},2.6)
+  .from(bars,{scaleY:0,duration:.9,stagger:.12,ease:'power3.out'},2.7)
+  .to(vals,{opacity:1,duration:.4,stagger:.12},3.1)
+  .to(qs,{opacity:1,duration:.4,stagger:.1},2.9)
+  .to(bars[5],{scaleX:1.1,duration:.5,ease:'back.out(2)'},4.0)
+  .to(lowTag,{opacity:1,duration:.5},4.1)
+  .to('#s2',{opacity:0,y:-20,duration:.5,ease:'power2.in'},5.0)
+
+// scene 3: 5.6 - 8.3
+  .set('#s3',{opacity:1},5.6)
+  .from('.ptitle',{opacity:0,y:14,duration:.5,stagger:.15},5.6)
+  .to(line,{strokeDashoffset:0,duration:1.6,ease:'power2.inOut'},5.8)
+  .to(area,{opacity:1,duration:1,ease:'none'},6.4)
+  .to(dots,{opacity:1,scale:1,duration:.35,stagger:.26,ease:'back.out(3)'},6.0)
+  .to(dl,{opacity:1,duration:.3,stagger:.26},6.1)
+  .to([dc,'#dsub'],{opacity:1,duration:.5},6.5)
+  .add(()=>{},6.0);
+segs.forEach((s,i)=>{tl.to(s[0],{attr:{'stroke-dasharray':s[1]+' '+(C-s[1])},duration:.8,ease:'power2.inOut'},6.0+i*.35)});
+tl.to(leg,{opacity:1,x:0,duration:.5,stagger:.15},6.6)
+  .from(leg,{x:20,duration:.5,stagger:.15},6.6)
+  .to('#s3',{opacity:0,y:-20,duration:.5,ease:'power2.in'},8.2)
+
+// scene 4: 8.7 - 10
+  .set('#s4',{opacity:1},8.7)
+  .from('#t4',{y:36,opacity:0,scale:.96,duration:.9},8.75)
+  .from('#r4',{scaleX:0,duration:.6,ease:'power2.inOut'},9.2)
+  .to({}, {duration:.1},9.9);
+tl.duration(10);
+window.__tl=tl;
+</script>
+</body>
+</html>

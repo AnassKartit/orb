@@ -1,0 +1,5 @@
+<template>
+<style>#root{position:absolute;inset:0;background:#11332f}#card-copy{position:absolute;left:80px;top:100px;font:700 54px Inter;color:#fff}</style>
+<div id="root" data-composition-id="card" data-duration="3" data-width="640" data-height="360" data-composition-variables='[{"id":"copy","type":"string","label":"Copy","default":"Mounted composition"}]'><div id="card-copy" class="clip" data-start="0" data-duration="3" data-var-text="copy">Mounted composition</div></div>
+<script>const tl=gsap.timeline({paused:true});tl.fromTo("#card-copy",{opacity:0,y:20},{opacity:1,y:0,duration:0.3},0);window.__timelines["card"]=tl;</script>
+</template>

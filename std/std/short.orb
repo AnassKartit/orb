@@ -1,0 +1,44 @@
+# orb:std/short : kinetic pieces for Shorts and punchy videos. Plain Orb: copy any def and change it.
+# Sizes follow the canvas (W, H), so the same call works at 9:16, 1:1 and 16:9.
+let u = min(W, H)/1080
+def hook(copy, at=0, dur=3, size=124, color=#fff, y=.08)
+  text "{copy}" at={at} dur={dur} box={W*.06},{H*y},{W*.88},{size*u*2.4} size={size*u} color={color} align=center leading=.95 stroke="{round(size*u*.11)}px #000" shadow="0 {round(size*u*.08)}px #000" height=auto layer=20
+    pop dur=.2 scale=1.6 ease=back.out(2.4)
+    slot
+def caption(copy, at, dur=1, times=-1, size=96, color=#FFE600, y=.56)
+  text "{copy}" at={at} dur={dur} box={W*.06},{H*y},{W*.88},{size*u*2.3} size={size*u} align=center leading=1 stroke="{round(size*u*.125)}px #000" shadow="0 {round(size*u*.09)}px #000" word-pad=.14em height=auto layer=20
+    pop dur=.14 scale=1.5 y=20 ease=back.out(2.4)
+    if times != -1
+      karaoke at={times} color={color}
+    slot
+def chip(copy, at, x, y, w, dur=3, color=#00E5FF, size=52)
+  text "{copy}" at={at} dur={dur} box={x},{y},{w},{size*u*1.9} size={size*u} align=center pad="{round(16*u)} {round(22*u)} {round(8*u)}" shadow="0 0 {round(26*u)}px {color}" color={color} bg=#0B0F1A border="{round(5*u)}px solid {color}" radius={round(22*u)}
+    pop dur=.22 rotate=-15 ease=back.out(3)
+    slot
+def badge(copy, at, dur=2, y=.4, color=#22C55E, tilt=-8, size=54)
+  text "{copy}" at={at} dur={dur} box={W*.1},{H*y},{W*.8},{size*u*2.1} size={size*u} weight=600 align=center pad="{round(18*u)} {round(34*u)}" color={color} bg=#0B0F1Aeb radius={round(20*u)} border="{round(5*u)}px solid {color}" shadow="0 0 {round(40*u)}px {color}" layer=15
+    pop dur=.25 rotate={tilt} rest-rotate={tilt/3} ease=back.out(2.6)
+    slot
+def stat(value, label, at, dur=3, y=.3, color=#FFE600, size=220)
+  group at={at} dur={dur} box={W*.06},{H*y},{W*.88},{size*u*1.9} layer=20
+    text "{value}" at=0 box=0,0,{W*.88},{size*u*1.15} size={size*u} weight=900 color={color} align=center leading=1 stroke="{round(size*u*.06)}px #000"
+      pop dur=.3 scale=2 ease=back.out(2)
+      slot
+    text "{label}" at=.25 box=0,{size*u*1.2},{W*.88},{size*u*.6} size={size*u*.3} color=#fff align=center in=rise
+def nameplate(name, role, at=.35, dur=4.2, x=72, y=.7)
+  group at={at} dur={dur} box={x*u},{H*y},{462*u},{141*u} layer=99
+    rect at=0 box=0,0,{8*u},{141*u} color="linear-gradient(180deg,#f9c70f 0%,#fe6b28 38%,#fd2b64 72%,#f201c5 100%)" radius={8*u} origin="50% 100%"
+      to dur=.32 scale-y=1 from=0 ease=power4.out
+      to at={dur-.26} dur=.2 scale-y=0 ease=power2.in
+    group at=.14 dur={dur-.36} box={8*u},0,{454*u},{141*u}
+      wipe dur=.5 ease=power4.out
+      wipe at={dur-.7} dur=.34 reverse=on ease=power2.in
+      rect at=0 color=#07080ecc radius={14*u} shadow="0 12px 40px #0006"
+      text "{name}" at=.12 box={24*u},{18*u},{400*u},{60*u} size={56*u} weight=900 leading=1
+        pop dur=.42 scale=1 y=22 ease=out
+      text "{role}" at=.46 box={24*u},{88*u},{420*u},{36*u} size={28*u} weight=700 leading=1.15 fill="linear-gradient(90deg,#f9c70f 0%,#fe6b28 40%,#fd2b64 78%,#f201c5 100%)"
+def backdrop(a=#1B2340, b=#0B0F1A)
+  rect at=0 color="radial-gradient({round(W*.9)}px {round(H*.5)}px at 50% 35%,{a} 0%,{b} 70%)"
+def beat(at, color=#ffffff, strength=.6)
+  rect at={at} dur=.3 color=transparent layer=100
+    flash dur=.2 color={color} opacity={strength} ease=power1.out

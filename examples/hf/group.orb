@@ -1,0 +1,6 @@
+motion "Group" 640x360 3s
+  group id=panel box=70,70,500,200 dur=3
+    rect color=#176b65 radius=20 dur=3
+    text "Moves together" at=0 dur=3 box=30,60,440,80 size=42
+    to at=0.5 dur=0.5 x=30 rotate=3
+    to at=1.5 dur=0.5 x=0 rotate=0

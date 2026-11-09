@@ -1,0 +1,2 @@
+motion "Composition" 640x360 3s
+  comp "compositions/card.html" id=card dur=3 vars={"copy": "Mounted composition"}

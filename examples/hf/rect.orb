@@ -1,0 +1,2 @@
+motion "Rect" 640x360 2s
+  rect box=100,80,440,200 color=#176b65 radius=24 border="4px solid #ffffff" shadow="0 8px 20px #000000" dur=2 in=pop

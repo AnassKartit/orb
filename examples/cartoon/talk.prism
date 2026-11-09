@@ -1,0 +1,8 @@
+motion "Hoot has a voice" 1280x720 7s accent=#58cc02 mode=light font=rounded
+  scene 7s
+    stage at=0
+      mascot "Hoot" color=#58cc02 x=0.5 size=1.1
+      act "Hoot" talk audio="assets/hoot-line.wav" at=0.5 volume=0.7
+      act "Hoot" talk text="Hello there! I can talk with a little rhythm." at=3.4 dur=2.5
+    # Standalone audio uses the same clock; volume=0 demonstrates a silent backing track.
+    audio "assets/hoot-line.wav" at=0.5 dur=2.4 volume=0

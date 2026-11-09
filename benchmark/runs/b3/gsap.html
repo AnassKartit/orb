@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>FY Recap</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#05070d;width:100%;height:100%;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',Helvetica,Arial,sans-serif;color:#e8ecf5}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(900px 500px at 30% 20%,#14203d 0%,#0a0f1e 55%,#05070d 100%);transform-origin:center center}
+.scene{position:absolute;inset:0;opacity:0}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+h1{font-size:120px;font-weight:800;letter-spacing:-3px;background:linear-gradient(90deg,#fff,#7fb2ff 60%,#4fe0c0);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1}
+.sub{font-size:34px;color:#9fb0d0;margin-top:20px;letter-spacing:1px}
+.bar-line{width:120px;height:4px;background:#4fe0c0;border-radius:2px;margin-top:30px}
+.lbl{font-size:22px;letter-spacing:6px;text-transform:uppercase;color:#8ea0c4}
+.big{font-size:128px;font-weight:800;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.panel{position:absolute;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px}
+.ptitle{position:absolute;font-size:20px;letter-spacing:3px;text-transform:uppercase;color:#8ea0c4}
+.legend div{display:flex;align-items:center;font-size:24px;margin:14px 0;color:#dfe6f5}
+.legend i{width:16px;height:16px;border-radius:5px;margin-right:14px;display:inline-block}
+.legend b{margin-left:auto;padding-left:30px}
+svg text{font-family:'Segoe UI',Helvetica,Arial,sans-serif}
+</style></head><body>
+<div id="stage">
+<div class="scene center" id="s1"><h1 id="t1">FY Recap</h1><div class="sub" id="st1">Growth in every quarter</div><div class="bar-line" id="bl"></div></div>
+
+<div class="scene" id="s2">
+<div class="center" style="position:absolute;top:50px;left:0;width:1280px"><div class="lbl">Revenue</div><div class="big" id="cnt">$0.0M</div></div>
+<svg id="bars" style="position:absolute;left:0;top:0" width="1280" height="720"></svg>
+</div>
+
+<div class="scene" id="s3">
+<div class="panel" style="left:60px;top:70px;width:700px;height:580px"></div>
+<div class="ptitle" style="left:90px;top:95px">Monthly growth %</div>
+<svg id="line" style="position:absolute;left:0;top:0" width="1280" height="720"></svg>
+<div class="panel" style="left:800px;top:70px;width:420px;height:580px"></div>
+<div class="ptitle" style="left:830px;top:95px">Revenue by region</div>
+<svg id="donut" style="position:absolute;left:800px;top:130px" width="420" height="300"></svg>
+<div class="legend" id="leg" style="position:absolute;left:840px;top:450px;width:340px">
+<div><i style="background:#4f8cff"></i>EMEA<b>45%</b></div>
+<div><i style="background:#4fe0c0"></i>Americas<b>35%</b></div>
+<div><i style="background:#ffb454"></i>APAC<b>20%</b></div></div>
+</div>
+
+<div class="scene center" id="s4"><h1 id="t4">Thank you</h1><div class="bar-line"></div></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+const NS='http://www.w3.org/2000/svg';
+function el(p,t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+// fit stage
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById('stage').style.transform='scale('+s+')'}
+fit();addEventListener('resize',fit);
+
+// bars
+const bs=document.getElementById('bars');
+const qv=[0.6,0.8,0.9,1.1],base=650,maxH=300,bw=130,gap=70,x0=(1280-(4*bw+3*gap))/2;
+el(bs,'line',{x1:x0-30,x2:1280-x0+30,y1:base,y2:base,stroke:'#2a3552','stroke-width':2});
+const barEls=[],valEls=[];
+qv.forEach((v,i)=>{
+ const h=v/1.1*maxH,x=x0+i*(bw+gap),best=i===3;
+ const r=el(bs,'rect',{x:x,y:base-h,width:bw,height:h,rx:10,fill:best?'#4fe0c0':'#4f8cff',opacity:best?1:.75});
+ r.style.transformOrigin=x+bw/2+'px '+base+'px';barEls.push(r);
+ const t=el(bs,'text',{x:x+bw/2,y:base-h-14,'text-anchor':'middle','font-size':28,'font-weight':700,fill:best?'#4fe0c0':'#fff'});t.textContent='$'+v.toFixed(1)+'M';valEls.push(t);
+ const q=el(bs,'text',{x:x+bw/2,y:base+34,'text-anchor':'middle','font-size':22,fill:'#8ea0c4'});q.textContent='Q'+(i+1);
+});
+const bestTag=el(bs,'text',{x:x0+3*(bw+gap)+bw/2,y:base-qv[3]/1.1*maxH-56,'text-anchor':'middle','font-size':18,'letter-spacing':3,fill:'#4fe0c0'});bestTag.textContent='BEST QUARTER';
+
+// line chart
+const ls=document.getElementById('line'),g=[2,3,3,5,4,6,7,9];
+const lx=110,lw=620,ly0=600,lh=420,mx=['J','F','M','A','M','J','J','A'];
+for(let i=0;i<=3;i++){const y=ly0-i*lh/3;el(ls,'line',{x1:lx,x2:lx+lw,y1:y,y2:y,stroke:'#222c47','stroke-width':1});
+ const t=el(ls,'text',{x:lx-12,y:y+5,'text-anchor':'end','font-size':16,fill:'#6f7fa3'});t.textContent=i*3+'%'}
+const pts=g.map((v,i)=>[lx+30+i*(lw-60)/7,ly0-v/9*lh*0.95]);
+function smooth(p){let d='M'+p[0];for(let i=0;i<p.length-1;i++){const a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
+ d+=' C'+(b[0]+(c[0]-a[0])/6)+' '+(b[1]+(c[1]-a[1])/6)+','+(c[0]-(e[0]-b[0])/6)+' '+(c[1]-(e[1]-b[1])/6)+','+c[0]+' '+c[1]}return d}
+p0=pts.map(p=>p.join(' ')).map((s,i)=>pts[i]);
+const d=smooth(pts);
+const defs=el(ls,'defs',{});const lg=el(defs,'linearGradient',{id:'lg',x1:0,y1:0,x2:0,y2:1});
+el(lg,'stop',{offset:0,'stop-color':'#4fe0c0','stop-opacity':.35});el(lg,'stop',{offset:1,'stop-color':'#4fe0c0','stop-opacity':0});
+const area=el(ls,'path',{d:d+' L'+pts[7][0]+' '+ly0+' L'+pts[0][0]+' '+ly0+' Z',fill:'url(#lg)',opacity:0});
+const path=el(ls,'path',{d:d,fill:'none',stroke:'#4fe0c0','stroke-width':5,'stroke-linecap':'round'});
+const L=path.getTotalLength();path.style.strokeDasharray=L;path.style.strokeDashoffset=L;
+const dots=pts.map((p,i)=>{const c=el(ls,'circle',{cx:p[0],cy:p[1],r:7,fill:'#05070d',stroke:'#4fe0c0','stroke-width':3});
+ const t=el(ls,'text',{x:p[0],y:p[1]-18,'text-anchor':'middle','font-size':17,'font-weight':600,fill:'#fff'});t.textContent=g[i]+'%';
+ const m=el(ls,'text',{x:p[0],y:ly0+30,'text-anchor':'middle','font-size':16,fill:'#6f7fa3'});m.textContent=mx[i];
+ gsap.set([c,t],{opacity:0});return [c,t]});
+
+// donut
+const ds=document.getElementById('donut'),R=95,C=2*Math.PI*R,cols=['#4f8cff','#4fe0c0','#ffb454'],dv=[45,35,20];
+el(ds,'circle',{cx:210,cy:150,r:R,fill:'none',stroke:'#1a2340','stroke-width':36});
+let acc=0;const segs=dv.map((v,i)=>{const len=C*v/100;
+ const c=el(ds,'circle',{cx:210,cy:150,r:R,fill:'none',stroke:cols[i],'stroke-width':36,'stroke-dasharray':'0 '+C,'stroke-dashoffset':-acc,transform:'rotate(-90 210 150)'});
+ acc+=len;return {c,len}});
+const ct=el(ds,'text',{x:210,y:162,'text-anchor':'middle','font-size':34,'font-weight':800,fill:'#fff'});ct.textContent='100%';
+
+// timeline (10s)
+gsap.set('#stage',{opacity:1});
+const tl=gsap.timeline({defaults:{ease:'power3.out'}});
+// scene 1: 0-2.4
+tl.set('#s1',{opacity:1},0)
+ .from('#t1',{y:50,opacity:0,scale:.92,duration:1,ease:'power4.out'},0.2)
+ .from('#st1',{y:24,opacity:0,duration:.8},0.8)
+ .from('#bl',{scaleX:0,duration:.7},1.1)
+ .to('#s1',{opacity:0,y:-30,duration:.5,ease:'power2.in'},2.2);
+// scene 2: 2.6-5.6
+tl.set('#s2',{opacity:1},2.7)
+ .from('#s2 .center',{y:-30,opacity:0,duration:.7},2.7);
+const o={v:0};
+tl.to(o,{v:3.4,duration:1.8,ease:'power2.out',onUpdate(){document.getElementById('cnt').textContent='$'+o.v.toFixed(1)+'M'}},2.9);
+tl.from(barEls,{scaleY:0,duration:.9,stagger:.15,ease:'back.out(1.2)'},3.2)
+ .from(valEls,{opacity:0,y:12,duration:.5,stagger:.15},3.7)
+ .from(bestTag,{opacity:0,y:8,duration:.5},4.5)
+ .to(barEls[3],{filter:'drop-shadow(0 0 18px #4fe0c0)',duration:.6},4.5)
+ .to(barEls.slice(0,3),{opacity:.45,duration:.5},4.5)
+ .to('#s2',{opacity:0,y:-30,duration:.5,ease:'power2.in'},5.6);
+// scene 3: 6.2-8.8
+tl.set('#s3',{opacity:1},6.2)
+ .from('#s3 .panel,#s3 .ptitle',{opacity:0,y:30,duration:.7,stagger:.05},6.2)
+ .to(path,{strokeDashoffset:0,duration:1.8,ease:'power2.inOut'},6.5)
+ .to(area,{opacity:1,duration:1},7.4);
+dots.forEach((dt,i)=>tl.to(dt,{opacity:1,duration:.3},6.7+i*0.2));
+segs.forEach((s,i)=>tl.to(s.c,{attr:{'stroke-dasharray':(s.len-3)+' '+(C-s.len+3)},duration:.8,ease:'power2.inOut'},6.8+i*.4));
+tl.from('#donut text',{opacity:0,duration:.6},7.6)
+ .from('#leg div',{x:20,opacity:0,duration:.5,stagger:.15},7.4)
+ .to('#s3',{opacity:0,y:-30,duration:.5,ease:'power2.in'},9.0);
+// scene 4: 9.3-10
+tl.set('#s4',{opacity:1},9.4)
+ .from('#t4',{scale:.9,opacity:0,duration:.6,ease:'power3.out'},9.4)
+ .from('#s4 .bar-line',{scaleX:0,duration:.4},9.6);
+tl.set({},{},10);
+</script></body></html>

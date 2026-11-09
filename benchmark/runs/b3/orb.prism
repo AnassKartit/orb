@@ -1,0 +1,12 @@
+motion "FY Recap" 1280x720 10s bg=slate
+  scene 2s
+    title "FY Recap" in=rise
+    sub "Growth in every quarter" in=fade
+  scene 3s
+    count "Revenue" $3.4M
+    bars 0.6 0.8 0.9 1.1
+  scene 3s
+    line 2 3 3 5 4 6 7 9
+    donut EMEA=45 Americas=35 APAC=20
+  scene 2s
+    title "Thank you" in=pop

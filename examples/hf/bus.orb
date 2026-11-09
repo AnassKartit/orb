@@ -1,0 +1,6 @@
+motion "Buses" 640x360 2s
+  bus music volume=0.05
+  bus sfx volume=0.3
+  audio "assets/tone.wav" bus=music dur=2
+  audio "assets/tone.wav" bus=sfx at=0.4 dur=0.5
+  text "Music + SFX buses" at=0 dur=2 box=60,130,520,90 size=40

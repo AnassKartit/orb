@@ -1,0 +1,390 @@
+{
+ "examples/cartoon/bench.prism": "bf93d0f413a9647b",
+ "examples/cartoon/mascot.prism": "86e464e5b063edcd",
+ "examples/cartoon/sheet.prism": "e43222f41762e597",
+ "examples/cartoon/talk.prism": "0fb9dfa9bd4180c3",
+ "examples/interactive/hoot.prism": "913c42722b7ad5cd",
+ "examples/launch.prism": "3738bdd8014ab172",
+ "examples/q4.prism": "3bed4d56aa095c13",
+ "examples/hf/all.orb": {
+  "files": {
+   "assets/H-card.svg": "asset",
+   "assets/H-sample.mp4": "asset",
+   "assets/H-words.json": "asset",
+   "assets/H-tone.wav": "asset",
+   "compositions/captions-7.html": "428eb61d90fd1ffb",
+   "compositions/mounted.html": "d1bf955289b5a115",
+   "compositions/panel.html": "d6b182856852ab3d",
+   "compositions/raw.html": "a810780b19a78e39",
+   "hyperframes.json": "21eeb52014e31726",
+   "index.html": "0d9360f620b9caf2",
+   "orb-map.json": "cb43525f960897a4"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/assets.orb": {
+  "files": {
+   "assets/H-card.svg": "asset",
+   "hyperframes.json": "af99ee3bb4cf29a8",
+   "index.html": "4ef784b2a12fcea4",
+   "orb-map.json": "1ea5f80a5c2c1184"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/audio.orb": {
+  "files": {
+   "assets/H-tone.wav": "asset",
+   "hyperframes.json": "b8ed6fe60ae6f565",
+   "index.html": "c22ce32cf7491281",
+   "orb-map.json": "ff916c630cc8cc77"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/bus.orb": {
+  "files": {
+   "assets/H-tone.wav": "asset",
+   "hyperframes.json": "e49646ed2f99beb7",
+   "index.html": "c48eb3f7eb449165",
+   "orb-map.json": "3e949eb0c5a8633c"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/captions.orb": {
+  "files": {
+   "assets/H-words.json": "asset",
+   "compositions/captions-1.html": "265a94e2b61c1d49",
+   "hyperframes.json": "110428bf8a21a8e7",
+   "index.html": "603c05e6b011a839",
+   "orb-map.json": "3bc31cb6f2203098"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/comp.orb": {
+  "files": {
+   "compositions/card.html": "a4503ae086ea84e3",
+   "hyperframes.json": "90a4cd2418da7b4f",
+   "index.html": "9917bd59694aa707",
+   "orb-map.json": "2f7ee4bccaf510d4"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/count.orb": {
+  "files": {
+   "hyperframes.json": "133afb7e23a867ca",
+   "index.html": "74df6878f69660b3",
+   "orb-map.json": "b392302840c6dee2"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/crop.orb": {
+  "files": {
+   "assets/H-sample.mp4": "asset",
+   "hyperframes.json": "24da04613320086c",
+   "index.html": "c56b8ac49d48aa4c",
+   "orb-map.json": "4785aad3d906926c"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/data.orb": {
+  "files": {
+   "hyperframes.json": "a4ecf732289b6fc2",
+   "index.html": "0947d3bf8eda445a",
+   "orb-map.json": "ffd90dcb5a0aaff1"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/def.orb": {
+  "files": {
+   "compositions/group-1.html": "8a8333934800a5f8",
+   "compositions/group-4.html": "b098d13e7278cadd",
+   "hyperframes.json": "f38f0dfee23359d6",
+   "index.html": "781eacfe79f27acf",
+   "orb-map.json": "efd01cc328320d2c"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/drain.orb": {
+  "files": {
+   "hyperframes.json": "418ba413bf759d0f",
+   "index.html": "a4110c3e18cf1938",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/emphasis.orb": {
+  "files": {
+   "hyperframes.json": "b36d146cfe0824be",
+   "index.html": "c0fd50c5a409e081",
+   "orb-map.json": "19e5298cb6634cf6"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/filter.orb": {
+  "files": {
+   "compositions/group-1.html": "42227cf2c5230702",
+   "hyperframes.json": "dce047ecf5f85f28",
+   "index.html": "a2042d1060a96789",
+   "orb-map.json": "5e5f714c6e4346c7"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/flash.orb": {
+  "files": {
+   "hyperframes.json": "ade44ac5d9e61100",
+   "index.html": "10cc3674ae90f654",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/group.orb": {
+  "files": {
+   "compositions/panel.html": "5858bc9a2cec668f",
+   "hyperframes.json": "1cd7b676e7e7e129",
+   "index.html": "375d91c5745810a4",
+   "orb-map.json": "d2d2fd356b5b399b"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/hardening-layout.orb": {
+  "files": {
+   "compositions/group-2.html": "a7c015d301ed2d69",
+   "hyperframes.json": "a4faa35ee405bf37",
+   "index.html": "aaec8e9d4a468310",
+   "orb-map.json": "fe7898ed6437730a"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/hardening-voice.orb": {
+  "files": {
+   "assets/H-hardening.words.json": "asset",
+   "assets/H-ping.wav": "asset",
+   "compositions/captions-3.html": "35cc85550ed31e6d",
+   "hyperframes.json": "890586bab119c1c8",
+   "index.html": "25c61b04a92d7e27",
+   "orb-map.json": "0130e7519255e719"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/hardening.orb": {
+  "files": {
+   "assets/H-pop.wav": "asset",
+   "assets/H-click.wav": "asset",
+   "assets/H-whoosh.wav": "asset",
+   "assets/H-ping.wav": "asset",
+   "hyperframes.json": "59be1feef1d2aeba",
+   "index.html": "d349fd3b4b4433a1",
+   "orb-map.json": "b326fe0f1ec41f72"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/highlight.orb": {
+  "files": {
+   "assets/H-card.svg": "asset",
+   "hyperframes.json": "1888103b32213b4e",
+   "index.html": "a71d5853fd636cde",
+   "orb-map.json": "db5fc406b528a771"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/html.orb": {
+  "files": {
+   "compositions/custom.html": "e00051e0233aab08",
+   "hyperframes.json": "b381e23b927c1283",
+   "index.html": "09f8f39adb1551e4",
+   "orb-map.json": "13489f327e8ff0be"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/image.orb": {
+  "files": {
+   "assets/H-card.svg": "asset",
+   "hyperframes.json": "c88117fc4ea54b02",
+   "index.html": "9ceabe737340cd51",
+   "orb-map.json": "6fe7355a5145c371"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/karaoke.orb": {
+  "files": {
+   "hyperframes.json": "1fd37ab507a9d14b",
+   "index.html": "b5be7cebb2249204",
+   "orb-map.json": "bee078b77aafea4c"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/loop.orb": {
+  "files": {
+   "assets/H-sample.mp4": "asset",
+   "hyperframes.json": "737b52c4c7f9e720",
+   "index.html": "f1cee4feef3f1e15",
+   "orb-map.json": "dbf442c996ac2b34"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/motion.orb": {
+  "files": {
+   "hyperframes.json": "62087f8c01a8f22c",
+   "index.html": "772b6aa2cc95ffe5",
+   "orb-map.json": "bda14759ef47bd66"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/multi-time.orb": {
+  "files": {
+   "hyperframes.json": "2b40008b1f677858",
+   "index.html": "edfc6f40e861042e",
+   "orb-map.json": "26fea1df08b8779c"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/nesting.orb": {
+  "files": {
+   "compositions/group-1.html": "62ff7404e7c65845",
+   "compositions/group-3.html": "f3ccf3c655e73850",
+   "hyperframes.json": "14ee91cd3944f6a3",
+   "index.html": "02e379a96daec933",
+   "orb-map.json": "42c015dce183dd8f"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/pop.orb": {
+  "files": {
+   "hyperframes.json": "59620f95bdeab943",
+   "index.html": "e84f3b6f09bd85de",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/pulse.orb": {
+  "files": {
+   "hyperframes.json": "b39eb759d720345e",
+   "index.html": "88cdc65942826070",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/punch.orb": {
+  "files": {
+   "hyperframes.json": "1f37eb7eb3880625",
+   "index.html": "73fc2880db41f3ba",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/push.orb": {
+  "files": {
+   "hyperframes.json": "14a861da4fa336f1",
+   "index.html": "c49b3423a4257cab",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/rect.orb": {
+  "files": {
+   "hyperframes.json": "0f4c9f8929822aff",
+   "index.html": "2fd59e974fe4904b",
+   "orb-map.json": "dd854561008a4c5f"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/rich-text.orb": {
+  "files": {
+   "assets/H-card.svg": "asset",
+   "hyperframes.json": "41a47e22b2f76d5e",
+   "index.html": "1a1791bd393778d9",
+   "orb-map.json": "6fef7264004346a7"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/shake.orb": {
+  "files": {
+   "hyperframes.json": "7dca7b59c91b0ed5",
+   "index.html": "4e6ce4b045416804",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/spin.orb": {
+  "files": {
+   "hyperframes.json": "2dd6bb28965d0ade",
+   "index.html": "35924c3034d07699",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/style.orb": {
+  "files": {
+   "hyperframes.json": "568600e256d36ea3",
+   "index.html": "fc156b8b927fb320",
+   "orb-map.json": "4ac2173cc30a54a8"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/text.orb": {
+  "files": {
+   "hyperframes.json": "ab20f012b2c9da23",
+   "index.html": "17615f0a962fdcf7",
+   "orb-map.json": "c82c9670e3e34f3b"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/to.orb": {
+  "files": {
+   "hyperframes.json": "e8714691aa2778a2",
+   "index.html": "941151ab2a9583ea",
+   "orb-map.json": "f9fa9b0ea34366f7"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/var.orb": {
+  "files": {
+   "hyperframes.json": "f1167103ef6c7cfb",
+   "index.html": "e9a56d1182dc75bd",
+   "orb-map.json": "bbe44bb33ef28928"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/video.orb": {
+  "files": {
+   "assets/H-sample.mp4": "asset",
+   "hyperframes.json": "99b72c7a6bf40f13",
+   "index.html": "96b961a3bfa9533c",
+   "orb-map.json": "ffe7d510b46e93d8"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/voice.orb": {
+  "files": {
+   "hyperframes.json": "d4375804f75782ed",
+   "index.html": "a8238e57c4158118",
+   "orb-map.json": "053525030b31ecd6"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/wipe.orb": {
+  "files": {
+   "hyperframes.json": "8c8edb81b0199d61",
+   "index.html": "abd8c463041a747c",
+   "orb-map.json": "45da1874ae6ea434"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/words.orb": {
+  "files": {
+   "assets/H-words.json": "asset",
+   "hyperframes.json": "57bd91f17a41719e",
+   "index.html": "a65c50ef1460625e",
+   "orb-map.json": "b4ad2105992c611b"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ },
+ "examples/hf/zoom.orb": {
+  "files": {
+   "assets/H-card.svg": "asset",
+   "hyperframes.json": "f331c81e853f6bb1",
+   "index.html": "0b4cab46987b6f8d",
+   "orb-map.json": "db5fc406b528a771"
+  },
+  "warnings": "e3b0c44298fc1c14"
+ }
+}

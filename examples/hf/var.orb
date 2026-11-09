@@ -1,0 +1,6 @@
+motion "Variables" 640x360 2s
+  var title string "Editable title" label="Headline"
+  var ink color "#ffffff"
+  var size number "42"
+  var enabled boolean "true"
+  text "{$title}" color={$ink} box=60,130,520,90 size=42 dur=2 in=fade

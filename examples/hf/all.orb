@@ -1,0 +1,18 @@
+motion "Vertical slice" 640x360 4s fps=30
+  var title string "Orb → HyperFrames"
+  var ink color "#ffffff"
+  bus music volume=0.03
+  audio "assets/tone.wav" bus=music at=0 dur=4 fade=0.2,0.3
+  video "assets/sample.mp4" id=footage at=0 dur=4 trim=0 fit=cover sound=off
+  group id=panel at=0 dur=4
+    rect box=50,30,540,100 color=#11332f radius=18 dur=4
+    text "{$title}" box=70,55,500,65 color={$ink} size=38 at=0 dur=4 in=fade
+    to at=0.3 dur=0.4 y=10
+    zoom at=1 dur=0.3 box=0,0,640,360 hold=0.3
+    highlight at=2 dur=1 box=45,25,550,120 color=#ffe600
+  image "assets/card.svg" box=60,160,180,100 at=0 dur=4
+  captions "assets/words.json" box=260,160,320,100 size=28 dur=2.2 at=0 max-words=2
+  comp "compositions/card.html" id=mounted at=3 dur=1 vars={"copy":"Composition"}
+  html id=raw at=2.3 dur=0.6 layer=10
+    <style>#raw-note{position:absolute;left:280px;top:230px;font:700 28px Inter;color:#fff}</style>
+    <div id="raw-note">Literal HTML</div>

@@ -1,0 +1,13 @@
+motion "Energy Use" 1280x720 10s accent=#22c55e mode=dark font=rounded
+  scene 2s
+    eyebrow "SUSTAINABILITY REPORT"
+    title "Energy Use" in=rise ease=expo
+    sub "Down 12% this year" in=fade
+  scene 3s layout=stack
+    count "Saved" 1,250 in=pop ease=spring
+    bars 980 910 870 800 760 720 labels=Q1,Q2,Q3,Q4,Q1,Q2 low="LOWEST" title="KWH PER QUARTER" in=grow stagger=0.08
+  scene 3s layout=columns
+    line 22 28 35 41 48 55 labels=Q1,Q2,Q3,Q4,Q1,Q2 title="RENEWABLE SHARE %" in=draw
+    donut Solar=38 Wind=32 Grid=30 title="CONSUMPTION BY SOURCE" in=grow
+  scene 2s
+    title "Keep going" in=pop ease=spring

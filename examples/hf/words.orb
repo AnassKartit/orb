@@ -1,0 +1,2 @@
+motion "Word file" 1080x600 2s assets=assets
+  text "Write once, seek anywhere." words=words.json box=160,180,800,150 size=56 align=center emph=#FFE600

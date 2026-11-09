@@ -1,0 +1,11 @@
+motion "Hoot expression sheet" 1280x720 4s accent=#58cc02 mode=light font=rounded
+  scene 4s
+    stage bg="#d7efff,#ffffff"
+      mascot "Neutral" color=#58cc02 x=0.13 y=0.52 size=0.36 mood=neutral
+      mascot "Happy" color=#58cc02 x=0.38 y=0.52 size=0.36 mood=happy
+      mascot "Sad" color=#58cc02 x=0.63 y=0.52 size=0.36 mood=sad
+      mascot "Surprised" color=#58cc02 x=0.88 y=0.52 size=0.36 mood=surprised
+      mascot "Angry" color=#58cc02 x=0.13 y=0.93 size=0.36 mood=angry
+      mascot "Sleepy" color=#58cc02 x=0.38 y=0.93 size=0.36 mood=sleepy
+      mascot "Love" color=#58cc02 x=0.63 y=0.93 size=0.36 mood=love
+      mascot "Blue" color=#1cb0f6 x=0.88 y=0.93 size=0.36 mood=happy

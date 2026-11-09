@@ -1,0 +1,4 @@
+motion "HTML escape hatch" 640x360 2s
+  html id=custom dur=2
+    <style>#root{position:absolute;inset:0}#custom-copy{position:absolute;left:60px;top:130px;font:700 44px Inter;color:#ffffff}</style>
+    <div id="custom-copy">Raw HTML composition</div>

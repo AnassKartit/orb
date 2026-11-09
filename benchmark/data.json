@@ -1,0 +1,240 @@
+{
+ "specTokens": 611,
+ "built": "2026-11-09 17:02",
+ "briefs": [
+  {
+   "id": "b1",
+   "brief": "A 10-second dark-theme data video titled 'Launch Week'. Open with the title and a one-line subtitle 'Signups beat the plan'. Then show a big counter 'Signups' counting up to 4,800 above a 7-bar chart of daily signups (120, 340, 560, 800, 1100, 980, 900) with the peak day highlighted. Then show a smooth line chart of retention (62, 58, 55, 54, 53, 52) and a donut chart of platform split (iOS 48, Android 36, Web 16) with a legend. End with the title 'Thank you'. Polished, readable design and smooth, professional motion.",
+   "versions": [
+    {
+     "format": "Orb",
+     "page": "benchmark/runs/b1/orb.html",
+     "source": "benchmark/runs/b1/orb.prism",
+     "note": "first attempt, rebuilt with the latest runtime",
+     "tokens": 154,
+     "bytes": 365
+    },
+    {
+     "format": "GSAP",
+     "page": "benchmark/runs/b1/gsap.html",
+     "source": "benchmark/runs/b1/gsap.html",
+     "note": "one-shot, untouched",
+     "tokens": 3892,
+     "bytes": 11306
+    },
+    {
+     "format": "Plain HTML/CSS/JS",
+     "page": "benchmark/runs/b1/plain.html",
+     "source": "benchmark/runs/b1/plain.html",
+     "note": "one-shot, untouched",
+     "tokens": 3765,
+     "bytes": 10381
+    },
+    {
+     "format": "anime.js v4",
+     "page": "benchmark/runs/b1/anime.html",
+     "source": "benchmark/runs/b1/anime.html",
+     "note": "one-shot, untouched",
+     "tokens": 4293,
+     "bytes": 12095
+    }
+   ]
+  },
+  {
+   "id": "b2",
+   "brief": "A 10-second dark-theme update video titled 'Sprint 24'. Open with the title and the subtitle 'Shipped on time'. Then show a big counter 'Story points' counting up to 86 above a 5-bar chart of points per day (12, 20, 17, 24, 13) with the tallest day highlighted. Then show a smooth burndown line (40, 34, 29, 22, 15, 9, 0) and a donut of ticket status (Done 70, Review 20, Todo 10) with a legend. End with the title 'Ship it'. Polished, readable design and smooth, professional motion.",
+   "versions": [
+    {
+     "format": "Orb",
+     "page": "benchmark/runs/b2/orb.html",
+     "source": "benchmark/runs/b2/orb.prism",
+     "note": "first attempt, rebuilt with the latest runtime",
+     "tokens": 118,
+     "bytes": 269
+    },
+    {
+     "format": "GSAP",
+     "page": "benchmark/runs/b2/gsap.html",
+     "source": "benchmark/runs/b2/gsap.html",
+     "note": "one-shot, untouched",
+     "tokens": 3879,
+     "bytes": 10569
+    },
+    {
+     "format": "Plain HTML/CSS/JS",
+     "page": "benchmark/runs/b2/plain.html",
+     "source": "benchmark/runs/b2/plain.html",
+     "note": "one-shot, untouched",
+     "tokens": 3385,
+     "bytes": 9320
+    },
+    {
+     "format": "anime.js v4",
+     "page": "benchmark/runs/b2/anime.html",
+     "source": "benchmark/runs/b2/anime.html",
+     "note": "one-shot, untouched",
+     "tokens": 4328,
+     "bytes": 11702
+    }
+   ]
+  },
+  {
+   "id": "b3",
+   "brief": "A 10-second dark-theme finance video titled 'FY Recap'. Open with the title and the subtitle 'Growth in every quarter'. Then show a big counter 'Revenue' counting up to $3.4M above a 4-bar chart of quarterly revenue in millions (0.6, 0.8, 0.9, 1.1) with the best quarter highlighted. Then show a smooth line chart of monthly growth percent (2, 3, 3, 5, 4, 6, 7, 9) and a donut of revenue by region (EMEA 45, Americas 35, APAC 20) with a legend. End with the title 'Thank you'. Polished, readable design and smooth, professional motion.",
+   "versions": [
+    {
+     "format": "Orb",
+     "page": "benchmark/runs/b3/orb.html",
+     "source": "benchmark/runs/b3/orb.prism",
+     "note": "first attempt, rebuilt with the latest runtime",
+     "tokens": 139,
+     "bytes": 298
+    },
+    {
+     "format": "GSAP",
+     "page": "benchmark/runs/b3/gsap.html",
+     "source": "benchmark/runs/b3/gsap.html",
+     "note": "one-shot, untouched",
+     "tokens": 3188,
+     "bytes": 8616
+    },
+    {
+     "format": "Plain HTML/CSS/JS",
+     "page": "benchmark/runs/b3/plain.html",
+     "source": "benchmark/runs/b3/plain.html",
+     "note": "one-shot, untouched",
+     "tokens": 3612,
+     "bytes": 9994
+    },
+    {
+     "format": "anime.js v4",
+     "page": "benchmark/runs/b3/anime.html",
+     "source": "benchmark/runs/b3/anime.html",
+     "note": "one-shot, untouched",
+     "tokens": 4486,
+     "bytes": 12239
+    }
+   ]
+  },
+  {
+   "id": "b4",
+   "brief": "A 10-second dark-theme report video titled 'Uptime Report'. Open with the title and the subtitle 'Q3 reliability'. Then show a big counter 'Uptime' counting up to 99.98%, above a 6-bar chart of monthly incident minutes for Jan to Jun (42, 31, 55, 18, 12, 9) with the worst month highlighted. Then show a smooth line chart of response time in ms (210, 190, 180, 160, 150, 140) and a donut chart of incident causes (Network 40, Deploys 35, Hardware 25) with a legend. End with the title 'Stay online'. Polished, readable design and smooth, professional motion.",
+   "versions": [
+    {
+     "format": "Orb",
+     "page": "benchmark/runs/b4/orb.html",
+     "source": "benchmark/runs/b4/orb.prism",
+     "note": "first attempt, rebuilt with the latest runtime",
+     "tokens": 209,
+     "bytes": 544
+    },
+    {
+     "format": "GSAP",
+     "page": "benchmark/runs/b4/gsap.html",
+     "source": "benchmark/runs/b4/gsap.html",
+     "note": "one-shot, untouched",
+     "tokens": 2926,
+     "bytes": 7518
+    },
+    {
+     "format": "Plain HTML/CSS/JS",
+     "page": "benchmark/runs/b4/plain.html",
+     "source": "benchmark/runs/b4/plain.html",
+     "note": "one-shot, untouched",
+     "tokens": 4140,
+     "bytes": 11278
+    },
+    {
+     "format": "anime.js v4",
+     "page": "benchmark/runs/b4/anime.html",
+     "source": "benchmark/runs/b4/anime.html",
+     "note": "one-shot, untouched",
+     "tokens": 3676,
+     "bytes": 10288
+    }
+   ]
+  },
+  {
+   "id": "b5",
+   "brief": "A 9-second dark-theme update video titled 'Hiring Update'. Open with the title and the subtitle 'Team grew 30%'. Then show a big counter 'New hires' counting up to 24 above a 5-bar chart of hires per month for Mar to Jul (2, 4, 6, 7, 5) with the best month highlighted. Then show a donut chart of hires by department (Engineering 45, Sales 30, Design 15, Ops 10) with a legend, and a smooth line of open roles (18, 15, 14, 10, 8). End with the title 'Welcome aboard'. Polished, readable design and smooth, professional motion.",
+   "versions": [
+    {
+     "format": "Orb",
+     "page": "benchmark/runs/b5/orb.html",
+     "source": "benchmark/runs/b5/orb.prism",
+     "note": "first attempt, rebuilt with the latest runtime",
+     "tokens": 171,
+     "bytes": 458
+    },
+    {
+     "format": "GSAP",
+     "page": "benchmark/runs/b5/gsap.html",
+     "source": "benchmark/runs/b5/gsap.html",
+     "note": "one-shot, untouched",
+     "tokens": 3313,
+     "bytes": 9003
+    },
+    {
+     "format": "Plain HTML/CSS/JS",
+     "page": "benchmark/runs/b5/plain.html",
+     "source": "benchmark/runs/b5/plain.html",
+     "note": "one-shot, untouched",
+     "tokens": 4246,
+     "bytes": 11556
+    },
+    {
+     "format": "anime.js v4",
+     "page": "benchmark/runs/b5/anime.html",
+     "source": "benchmark/runs/b5/anime.html",
+     "note": "one-shot, untouched",
+     "tokens": 2685,
+     "bytes": 7753
+    }
+   ]
+  },
+  {
+   "id": "b6",
+   "brief": "A 10-second dark-theme sustainability video titled 'Energy Use'. Open with the title and the subtitle 'Down 12% this year'. Then show a big counter 'Saved' counting up to 1,250 above a 6-bar chart of kWh per quarter over 6 quarters Q1 to Q2 (980, 910, 870, 800, 760, 720) with the lowest quarter highlighted. Then show a smooth line of renewable share percent (22, 28, 35, 41, 48, 55) and a donut chart of consumption by source (Solar 38, Wind 32, Grid 30) with a legend. End with the title 'Keep going'. Polished, readable design and smooth, professional motion.",
+   "versions": [
+    {
+     "format": "Orb",
+     "page": "benchmark/runs/b6/orb_v2.html",
+     "source": "benchmark/runs/b6/orb_v2.prism",
+     "note": "latest run with the current spec",
+     "tokens": 235,
+     "bytes": 617
+    },
+    {
+     "format": "GSAP",
+     "page": "benchmark/runs/b6/gsap.html",
+     "source": "benchmark/runs/b6/gsap.html",
+     "note": "one-shot, untouched",
+     "tokens": 3486,
+     "bytes": 8966
+    },
+    {
+     "format": "Plain HTML/CSS/JS",
+     "page": "benchmark/runs/b6/plain.html",
+     "source": "benchmark/runs/b6/plain.html",
+     "note": "one-shot, untouched",
+     "tokens": 3171,
+     "bytes": 8504
+    },
+    {
+     "format": "anime.js v4",
+     "page": "benchmark/runs/b6/anime.html",
+     "source": "benchmark/runs/b6/anime.html",
+     "note": "one-shot, untouched",
+     "tokens": 4510,
+     "bytes": 11701
+    }
+   ]
+  }
+ ],
+ "deck": {
+  "page": "examples/copilot/deck.html",
+  "source": "examples/copilot/deck.prism",
+  "tokens": 4640,
+  "slides": 22
+ }
+}

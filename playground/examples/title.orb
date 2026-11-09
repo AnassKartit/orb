@@ -1,0 +1,3 @@
+motion "Hello Orb" 1280x720 4s accent=#7c5cff
+  scene 4s
+    title "Three lines make a title" in=rise

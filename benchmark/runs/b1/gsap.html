@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Launch Week</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--bg:#0b0f1a;--panel:#131a2b;--text:#f1f5ff;--muted:#8d99b5;--accent:#5b8cff;--hot:#ffb547;--teal:#2dd4bf;--pink:#f472b6}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#05070d;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center;font-family:Inter,"Segoe UI",system-ui,sans-serif;color:var(--text)}
+#wrap{width:1280px;height:720px;transform-origin:center center;flex:none}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(900px 600px at 20% 10%,#17213d 0%,var(--bg) 60%)}
+.glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35}
+#g1{width:420px;height:420px;background:var(--accent);left:-120px;top:380px}
+#g2{width:360px;height:360px;background:var(--pink);right:-100px;top:-120px;opacity:.2}
+.scene{position:absolute;inset:0;opacity:0;visibility:hidden}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.kicker{font-size:18px;letter-spacing:.35em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:22px}
+h1{font-size:112px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.sub{font-size:32px;color:var(--muted);margin-top:26px}
+.rule{width:120px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--teal));margin-top:34px}
+.label{font-size:18px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);font-weight:600}
+#s2 .head{position:absolute;left:100px;top:56px}
+#count{font-size:150px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;margin-top:6px}
+#count span{color:var(--accent)}
+#plan{position:absolute;right:100px;top:84px;text-align:right}
+#plan b{display:block;font-size:44px;color:var(--teal)}
+#bars{position:absolute;left:100px;right:100px;top:290px;height:340px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;border-bottom:2px solid #26304a}
+.col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.bar{width:100%;border-radius:10px 10px 0 0;background:linear-gradient(180deg,#6b97ff,#3a5fc4);transform-origin:bottom;transform:scaleY(0)}
+.bar.peak{background:linear-gradient(180deg,#ffd27a,var(--hot));box-shadow:0 0 40px rgba(255,181,71,.45)}
+.val{font-size:22px;font-weight:700;margin-bottom:10px;opacity:0}
+.col.pk .val{color:var(--hot)}
+.day{position:absolute;bottom:-40px;font-size:18px;color:var(--muted);font-weight:600}
+.badge{position:absolute;top:-8px;font-size:14px;letter-spacing:.2em;font-weight:800;color:#1a1204;background:var(--hot);padding:5px 12px;border-radius:20px;opacity:0;white-space:nowrap}
+#s3 h2{position:absolute;left:100px;top:56px;font-size:44px;font-weight:800;letter-spacing:-.02em}
+.card{position:absolute;top:150px;height:490px;background:var(--panel);border:1px solid #232d49;border-radius:24px;padding:28px 32px}
+#c1{left:100px;width:620px}
+#c2{left:750px;width:430px}
+.card .label{margin-bottom:6px}
+.card .big{font-size:20px;color:var(--muted)}
+svg{display:block;overflow:visible}
+.legend{position:absolute;left:32px;right:32px;bottom:30px;display:flex;flex-direction:column;gap:14px}
+.li{display:flex;align-items:center;font-size:22px;opacity:0}
+.li i{width:16px;height:16px;border-radius:5px;margin-right:14px}
+.li em{margin-left:auto;font-style:normal;font-weight:700}
+#dc{position:absolute;left:0;right:0;top:92px;display:flex;justify-content:center}
+#dctr{position:absolute;left:0;right:0;top:174px;text-align:center}
+#dctr b{display:block;font-size:44px;font-weight:800}
+#dctr span{font-size:14px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div class="glow" id="g1"></div><div class="glow" id="g2"></div>
+
+  <div class="scene center" id="s1">
+    <div class="kicker">Product Report</div>
+    <h1 id="t1">Launch Week</h1>
+    <div class="sub" id="t2">Signups beat the plan</div>
+    <div class="rule" id="t3"></div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div class="head"><div class="label">Signups</div><div id="count"><span>0</span></div></div>
+    <div id="plan"><div class="label">vs plan</div><b>+20%</b></div>
+    <div id="bars"></div>
+  </div>
+
+  <div class="scene" id="s3">
+    <h2>Retention &amp; platforms</h2>
+    <div class="card" id="c1">
+      <div class="label">Retention</div><div class="big">% of users returning, weekly</div>
+      <svg id="line" width="556" height="340" viewBox="0 0 556 340" style="margin-top:14px"></svg>
+    </div>
+    <div class="card" id="c2">
+      <div class="label">Platform split</div>
+      <div id="dc"><svg width="230" height="230" viewBox="0 0 230 230" id="donut"></svg></div>
+      <div id="dctr"><b>100%</b><span>of signups</span></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+
+  <div class="scene center" id="s4">
+    <div class="kicker">See you next launch</div>
+    <h1 id="ty">Thank you</h1>
+    <div class="rule"></div>
+  </div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(function(){
+  function fit(){var s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById('wrap').style.transform='scale('+s+')';}
+  fit();addEventListener('resize',fit);
+
+  var $=function(s){return document.querySelector(s)};
+  // Bars
+  var data=[120,340,560,800,1100,980,900],days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],max=1100,H=250,peak=data.indexOf(max);
+  var bars=$('#bars');
+  data.forEach(function(v,i){
+    var c=document.createElement('div');c.className='col'+(i===peak?' pk':'');
+    c.innerHTML=(i===peak?'<div class="badge">PEAK DAY</div>':'')+'<div class="val">'+v.toLocaleString('en-US')+'</div><div class="bar'+(i===peak?' peak':'')+'" style="height:'+Math.round(v/max*H)+'px"></div><div class="day">'+days[i]+'</div>';
+    bars.appendChild(c);
+  });
+  // badge position above value
+  var pc=bars.children[peak],badge=pc.querySelector('.badge');
+  badge.style.top=(340-Math.round(max/max*H)-70)+'px';
+
+  // Line chart
+  var NS='http://www.w3.org/2000/svg',ret=[62,58,55,54,53,52],W=556,Hh=340,pl=44,pr=16,pt=20,pb=44,lo=40,hi=70;
+  var svg=$('#line'),px=function(i){return pl+i*(W-pl-pr)/(ret.length-1)},py=function(v){return pt+(hi-v)/(hi-lo)*(Hh-pt-pb)};
+  function el(n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e;}
+  [40,50,60,70].forEach(function(v){
+    el('line',{x1:pl,x2:W-pr,y1:py(v),y2:py(v),stroke:'#26304a','stroke-width':1});
+    var t=el('text',{x:pl-10,y:py(v)+5,'text-anchor':'end',fill:'#8d99b5','font-size':14});t.textContent=v+'%';
+  });
+  var pts=ret.map(function(v,i){return [px(i),py(v)]});
+  var d='M'+pts[0].join(',');
+  for(var i=1;i<pts.length;i++){var a=pts[i-1],b=pts[i],mx=(a[0]+b[0])/2;d+=' C'+mx+','+a[1]+' '+mx+','+b[1]+' '+b[0]+','+b[1];}
+  var area=el('path',{d:d+' L'+pts[pts.length-1][0]+','+(Hh-pb)+' L'+pts[0][0]+','+(Hh-pb)+' Z',fill:'url(#ag)',opacity:0});
+  var defs=document.createElementNS(NS,'defs');defs.innerHTML='<linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8cff" stop-opacity=".35"/><stop offset="1" stop-color="#5b8cff" stop-opacity="0"/></linearGradient>';svg.insertBefore(defs,svg.firstChild);
+  var path=el('path',{d:d,fill:'none',stroke:'#5b8cff','stroke-width':5,'stroke-linecap':'round',pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':1});
+  var dots=[],lbls=[];
+  pts.forEach(function(p,i){
+    dots.push(el('circle',{cx:p[0],cy:p[1],r:7,fill:'#0b0f1a',stroke:'#5b8cff','stroke-width':3,opacity:0}));
+    var t=el('text',{x:p[0],y:p[1]-16,'text-anchor':'middle',fill:'#f1f5ff','font-size':17,'font-weight':700,opacity:0});t.textContent=ret[i]+'%';lbls.push(t);
+    var w=el('text',{x:p[0],y:Hh-14,'text-anchor':'middle',fill:'#8d99b5','font-size':14});w.textContent='W'+(i+1);
+  });
+
+  // Donut
+  var segs=[['iOS',48,'#5b8cff'],['Android',36,'#2dd4bf'],['Web',16,'#f472b6']],ds=$('#donut'),circles=[],start=0;
+  var R=88,C=115;
+  var track=document.createElementNS(NS,'circle');[['cx',C],['cy',C],['r',R],['fill','none'],['stroke','#1c2540'],['stroke-width',30]].forEach(function(a){track.setAttribute(a[0],a[1])});ds.appendChild(track);
+  segs.forEach(function(s){
+    var c=document.createElementNS(NS,'circle');
+    [['cx',C],['cy',C],['r',R],['fill','none'],['stroke',s[2]],['stroke-width',30],['pathLength',100],['transform','rotate(-90 '+C+' '+C+')'],['stroke-dasharray','0 100']].forEach(function(a){c.setAttribute(a[0],a[1])});
+    ds.appendChild(c);circles.push({el:c,len:s[1],start:start});start+=s[1];
+  });
+  var lg=$('#legend');
+  segs.forEach(function(s){var l=document.createElement('div');l.className='li';l.innerHTML='<i style="background:'+s[2]+'"></i>'+s[0]+'<em>'+s[1]+'%</em>';lg.appendChild(l);});
+  var dp={p:0};
+
+  // Timeline
+  var tl=gsap.timeline({defaults:{ease:'power3.out'}});
+  gsap.set(['#s1','#s2','#s3','#s4'],{visibility:'visible'});
+
+  // Scene 1 (0 - 2.4)
+  tl.to('#s1',{opacity:1,duration:.01},0)
+    .from('#t1',{y:50,opacity:0,duration:1,ease:'power4.out'},.2)
+    .from('#t2',{y:24,opacity:0,duration:.8},.8)
+    .from('#t3',{scaleX:0,duration:.8},1.1)
+    .to('#s1',{opacity:0,y:-30,duration:.5,ease:'power2.in'},2.3);
+
+  // Scene 2 (2.8 - 5.6)
+  tl.set('#s2',{opacity:1},2.8)
+    .from('#s2 .head',{x:-40,opacity:0,duration:.7},2.8)
+    .from('#plan',{x:40,opacity:0,duration:.7},3.0);
+  var cnt={v:0},cel=$('#count');
+  tl.to(cnt,{v:4800,duration:2.2,ease:'power2.out',onUpdate:function(){cel.innerHTML='<span>'+Math.round(cnt.v).toLocaleString('en-US')+'</span>';}},3.0)
+    .to('.bar',{scaleY:1,duration:.9,stagger:.12,ease:'back.out(1.2)'},3.2)
+    .to('.val',{opacity:1,duration:.4,stagger:.12},3.6)
+    .to('.badge',{opacity:1,y:-6,duration:.5},4.6)
+    .to('.bar.peak',{scaleX:1.08,duration:.4,yoyo:true,repeat:1,ease:'sine.inOut'},4.6)
+    .to('#s2',{opacity:0,y:-30,duration:.5,ease:'power2.in'},5.6);
+
+  // Scene 3 (6.0 - 8.5)
+  tl.set('#s3',{opacity:1},6.0)
+    .from('#s3 h2',{y:20,opacity:0,duration:.6},6.0)
+    .from('#c1',{y:40,opacity:0,duration:.7},6.1)
+    .from('#c2',{y:40,opacity:0,duration:.7},6.3)
+    .to(path,{strokeDashoffset:0,duration:1.6,ease:'power2.inOut'},6.5)
+    .to(area,{opacity:1,duration:1},7.2)
+    .to(dots,{opacity:1,duration:.3,stagger:.26},6.7)
+    .to(lbls,{opacity:1,duration:.3,stagger:.26},6.8)
+    .to(dp,{p:1,duration:1.5,ease:'power3.inOut',onUpdate:function(){
+      circles.forEach(function(c){c.el.setAttribute('stroke-dasharray',(c.len*dp.p)+' '+(100-c.len*dp.p));c.el.setAttribute('stroke-dashoffset',-c.start*dp.p);});
+    }},6.6)
+    .to('.li',{opacity:1,x:0,duration:.5,stagger:.15},7.2)
+    .to('#s3',{opacity:0,y:-30,duration:.5,ease:'power2.in'},8.5);
+
+  // Scene 4 (9.0 - 10)
+  tl.set('#s4',{opacity:1},8.95)
+    .from('#s4 .kicker',{opacity:0,y:16,duration:.5},8.95)
+    .from('#ty',{y:40,opacity:0,scale:.96,duration:.8,ease:'power4.out'},9.05)
+    .from('#s4 .rule',{scaleX:0,duration:.6},9.4);
+  tl.to({}, {duration:.01}, 10);
+  gsap.set('.li',{x:-20});
+})();
+</script>
+</body>
+</html>

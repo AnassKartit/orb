@@ -1,0 +1,6 @@
+motion "Literal and rich text" 16:9 3s
+  rect at=0 color=#f1f5f9
+  group at=0 box=240,200,1440,650 layout=stack
+    text "Literal \{copy\}" at=0 box=0,0,1200,160 size=100 color=auto bg=#f1f5f9
+    text "YOUR *CLOUD*{color=#0369a1} BILL" at=0 box=0,0,1200,160 size=100 color=auto bg=#f1f5f9
+    text "<b>Words</b> <small>keep</small> *spaces*" at=0 box=0,0,1200,160 size=80 color=#0f172a emph=#0369a1

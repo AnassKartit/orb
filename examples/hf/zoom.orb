@@ -1,0 +1,3 @@
+motion "Zoom" 640x360 3s
+  image "assets/card.svg" dur=3
+    zoom at=0.4 dur=0.5 box=200,80,240,200 hold=0.5

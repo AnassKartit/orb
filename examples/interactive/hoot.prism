@@ -1,0 +1,14 @@
+motion "Meet Hoot" 1280x720 30s accent=#58cc02 mode=light font=rounded loop=on
+  scene 30s
+    stage at=0
+      mascot "Hoot" color=#58cc02 x=0.5 size=1.1
+      machine "Hoot" blend=0.2
+        input hovered bool
+        input poke trigger
+        input level number 0..1
+        state idle: act idle loop
+        state curious when hovered: act look to=pointer; act feel to=happy
+        state giggle on poke: act laugh dur=1.2 -> idle
+      on hover "Hoot" hovered
+      on click "Hoot" poke
+      on pointer "Hoot" look

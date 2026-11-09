@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sprint 24</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05070d;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center;font-family:"Inter","Segoe UI",Helvetica,Arial,sans-serif;color:#eef2ff}
+#stage{position:relative;width:1280px;height:720px;flex:none;overflow:hidden;background:radial-gradient(900px 600px at 20% 10%,#16204a 0%,#0b1020 55%,#070a14 100%)}
+.scene{position:absolute;inset:0;opacity:0;will-change:opacity,transform}
+.glow{position:absolute;width:520px;height:520px;border-radius:50%;filter:blur(90px);opacity:.35}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+h1{font-size:120px;font-weight:800;letter-spacing:-3px;background:linear-gradient(90deg,#fff,#9fb4ff 60%,#7ef0d0);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1}
+.sub{font-size:36px;color:#9aa6c9;letter-spacing:6px;text-transform:uppercase;margin-top:18px}
+.label{position:absolute;font-size:20px;letter-spacing:4px;text-transform:uppercase;color:#7f8bb0}
+.big{position:absolute;left:80px;top:70px;font-size:170px;font-weight:800;letter-spacing:-5px;line-height:1;font-variant-numeric:tabular-nums}
+.big span{color:#7ef0d0}
+.card{position:absolute;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:24px}
+svg text{font-family:"Inter","Segoe UI",Helvetica,Arial,sans-serif}
+.bar{transition:none}
+#bar{position:absolute;left:0;bottom:0;height:4px;background:linear-gradient(90deg,#6c8cff,#7ef0d0);width:0}
+.leg{position:absolute;font-size:24px;display:flex;align-items:center;gap:14px;opacity:0}
+.leg i{width:18px;height:18px;border-radius:6px;display:block}
+.leg b{margin-left:auto;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="glow" style="left:-120px;top:-160px;background:#4b63ff"></div>
+  <div class="glow" style="right:-140px;bottom:-200px;background:#14b88f"></div>
+
+  <div class="scene center" id="s1">
+    <h1>Sprint 24</h1>
+    <div class="sub" id="sub">Shipped on time</div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div class="label" style="left:84px;top:44px">Story points</div>
+    <div class="big"><span id="cnt">0</span></div>
+    <div class="label" style="left:84px;top:300px">Points per day</div>
+    <svg id="bars" width="1280" height="720" style="position:absolute;left:0;top:0"></svg>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="label" style="left:84px;top:44px">Burndown</div>
+    <div class="label" style="left:740px;top:44px">Ticket status</div>
+    <div class="card" style="left:60px;top:90px;width:630px;height:560px"></div>
+    <div class="card" style="left:720px;top:90px;width:500px;height:560px"></div>
+    <svg id="line" width="1280" height="720" style="position:absolute;left:0;top:0"></svg>
+    <div class="leg" style="left:780px;top:490px;width:380px"><i style="background:#7ef0d0"></i>Done<b>70%</b></div>
+    <div class="leg" style="left:780px;top:540px;width:380px"><i style="background:#6c8cff"></i>Review<b>20%</b></div>
+    <div class="leg" style="left:780px;top:590px;width:380px"><i style="background:#ffb86b"></i>Todo<b>10%</b></div>
+  </div>
+
+  <div class="scene center" id="s4">
+    <h1 style="font-size:150px">Ship it</h1>
+  </div>
+  <div id="bar"></div>
+</div>
+
+<script>
+var NS="http://www.w3.org/2000/svg";
+function el(p,n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e}
+function clamp(x){return x<0?0:x>1?1:x}
+function eo(x){x=clamp(x);return 1-Math.pow(1-x,3)}
+function eio(x){x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2}
+function seg(t,a,b){return clamp((t-a)/(b-a))}
+
+/* bars */
+var bs=document.getElementById("bars"),vals=[12,20,17,24,13],days=["Mon","Tue","Wed","Thu","Fri"],bars=[],bl=[],bv=[];
+var bx0=120,bw=140,gap=64,base=660,maxH=290;
+vals.forEach(function(v,i){
+  var x=bx0+i*(bw+gap);
+  var hi=v===24;
+  bars.push(el(bs,"rect",{x:x,y:base,width:bw,height:0,rx:14,fill:hi?"#7ef0d0":"#3b4a8a"}));
+  bv.push(el(bs,"text",{x:x+bw/2,y:base-10,"text-anchor":"middle","font-size":30,"font-weight":700,fill:hi?"#7ef0d0":"#c8d2f5",opacity:0}));
+  bv[i].textContent=v;
+  var t=el(bs,"text",{x:x+bw/2,y:base+0,"text-anchor":"middle","font-size":20,fill:"#7f8bb0"});
+  t.textContent=days[i];t.setAttribute("y",base+0);
+});
+el(bs,"line",{x1:100,x2:1180,y1:base,y2:base,stroke:"rgba(255,255,255,.15)"});
+/* shift baseline labels below axis */
+Array.prototype.forEach.call(bs.querySelectorAll("text[font-size='20']"),function(t){t.setAttribute("y",base+0)});
+
+/* line chart */
+var ls=document.getElementById("line");
+var data=[40,34,29,22,15,9,0],lx=110,lw=540,ly=150,lh=400;
+var pts=data.map(function(v,i){return [lx+i*lw/6, ly+lh-(v/40)*lh*0.95]});
+for(var g=0;g<5;g++){el(ls,"line",{x1:lx,x2:lx+lw,y1:ly+g*lh/4*0.95+ (lh*0.05),y2:ly+g*lh/4*0.95+(lh*0.05),stroke:"rgba(255,255,255,.07)"})}
+function smooth(p){var d="M"+p[0][0]+","+p[0][1];for(var i=0;i<p.length-1;i++){var a=p[i-1]||p[i],b=p[i],c=p[i+1],e=p[i+2]||c;
+ d+=" C"+(b[0]+(c[0]-a[0])/6)+","+(b[1]+(c[1]-a[1])/6)+" "+(c[0]-(e[0]-b[0])/6)+","+(c[1]-(e[1]-b[1])/6)+" "+c[0]+","+c[1]}return d}
+var dstr=smooth(pts);
+var defs=el(ls,"defs",{});
+var grad=el(defs,"linearGradient",{id:"lg",x1:0,x2:0,y1:0,y2:1});
+el(grad,"stop",{offset:"0","stop-color":"#6c8cff","stop-opacity":.35});
+el(grad,"stop",{offset:"1","stop-color":"#6c8cff","stop-opacity":0});
+var area=el(ls,"path",{d:dstr+" L"+pts[6][0]+","+(ly+lh)+" L"+pts[0][0]+","+(ly+lh)+" Z",fill:"url(#lg)",opacity:0});
+var path=el(ls,"path",{d:dstr,fill:"none",stroke:"#7ef0d0","stroke-width":5,"stroke-linecap":"round"});
+var plen=path.getTotalLength();path.style.strokeDasharray=plen;path.style.strokeDashoffset=plen;
+var dots=pts.map(function(p){return el(ls,"circle",{cx:p[0],cy:p[1],r:0,fill:"#0b1020",stroke:"#7ef0d0","stroke-width":3})});
+var dl=["D1","D2","D3","D4","D5","D6","D7"];
+pts.forEach(function(p,i){var t=el(ls,"text",{x:p[0],y:ly+lh+34,"text-anchor":"middle","font-size":18,fill:"#7f8bb0"});t.textContent=dl[i]});
+var v0=el(ls,"text",{x:pts[0][0]+4,y:pts[0][1]-18,"font-size":24,"font-weight":700,fill:"#c8d2f5"});v0.textContent="40";
+var v1=el(ls,"text",{x:pts[6][0],y:pts[6][1]-18,"text-anchor":"middle","font-size":24,"font-weight":700,fill:"#7ef0d0"});v1.textContent="0";
+
+/* donut */
+var cx=970,cy=290,R=105,SW=44,C=2*Math.PI*R;
+var segs=[[70,"#7ef0d0"],[20,"#6c8cff"],[10,"#ffb86b"]],arcs=[],acc=0;
+el(ls,"circle",{cx:cx,cy:cy,r:R,fill:"none",stroke:"rgba(255,255,255,.06)","stroke-width":SW});
+segs.forEach(function(s){
+  var c=el(ls,"circle",{cx:cx,cy:cy,r:R,fill:"none",stroke:s[1],"stroke-width":SW,transform:"rotate(-90 "+cx+" "+cy+")"});
+  c.style.strokeDasharray="0 "+C;c.style.strokeDashoffset=-acc/100*C;arcs.push([c,s[0]/100*C]);acc+=s[0];
+});
+var dt=el(ls,"text",{x:cx,y:cy+16,"text-anchor":"middle","font-size":52,"font-weight":800,fill:"#eef2ff"});dt.textContent="70%";
+var dt2=el(ls,"text",{x:cx,y:cy+46,"text-anchor":"middle","font-size":16,fill:"#7f8bb0"});dt2.textContent="DONE";
+
+var S=[document.getElementById("s1"),document.getElementById("s2"),document.getElementById("s3"),document.getElementById("s4")];
+var legs=document.querySelectorAll(".leg"),cnt=document.getElementById("cnt"),sub=document.getElementById("sub"),pb=document.getElementById("bar");
+var DUR=10;
+function vis(s,t,a,b,f){ /* fade in f, out f */
+  var o=Math.min(eo(seg(t,a,a+f)),1-eo(seg(t,b-f,b)));
+  s.style.opacity=o;return o}
+function frame(t){
+  /* s1 0-2.6 */
+  var o=vis(S[0],t,0,2.6,.5);
+  S[0].style.transform="scale("+(1+0.04*seg(t,0,2.6))+")";
+  sub.style.opacity=eo(seg(t,.6,1.3));sub.style.transform="translateY("+(1-eo(seg(t,.6,1.3)))*20+"px)";
+  S[0].querySelector("h1").style.transform="translateY("+(1-eo(seg(t,0,.8)))*30+"px)";
+  /* s2 2.4-5.4 */
+  vis(S[1],t,2.4,5.4,.5);
+  cnt.textContent=Math.round(86*eo(seg(t,2.7,4.2)));
+  bars.forEach(function(r,i){
+    var p=eo(seg(t,3.0+i*.12,3.9+i*.12)),h=vals[i]/24*maxH*p;
+    r.setAttribute("height",h);r.setAttribute("y",base-h);
+    bv[i].setAttribute("y",base-h-14);bv[i].setAttribute("opacity",p);
+  });
+  /* s3 5.2-8.2 */
+  vis(S[2],t,5.2,8.2,.5);
+  var lp=eio(seg(t,5.6,7.2));
+  path.style.strokeDashoffset=plen*(1-lp);
+  area.setAttribute("opacity",lp);
+  dots.forEach(function(d,i){d.setAttribute("r",lp>=i/6-0.001&&lp>0?7*eo(seg(lp,i/6,i/6+.1)):0)});
+  var dp=eio(seg(t,5.8,7.4));
+  arcs.forEach(function(a,i){
+    var st=i===0?0:(i===1?.7:.9),en=st+(i===0?.7:(i===1?.2:.1));
+    var q=clamp((dp-st)/(en-st));
+    a[0].style.strokeDasharray=(a[1]*q)+" "+C;
+  });
+  legs.forEach(function(l,i){var q=eo(seg(t,6.6+i*.15,7.2+i*.15));l.style.opacity=q;l.style.transform="translateX("+(1-q)*20+"px)"});
+  /* s4 8.0-10 */
+  var o4=eo(seg(t,8.0,8.7));
+  S[3].style.opacity=o4;
+  S[3].style.transform="scale("+(0.92+0.08*o4)+")";
+  pb.style.width=(t/DUR*100)+"%";
+}
+var t0=performance.now();
+function loop(now){
+  var t=((now-t0)/1000)%(DUR+1);
+  if(t>DUR)t=DUR;
+  frame(t);requestAnimationFrame(loop)
+}
+function fit(){var s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById("stage").style.transform="scale("+s+")"}
+addEventListener("resize",fit);fit();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

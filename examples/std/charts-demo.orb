@@ -1,0 +1,8 @@
+import "orb:std/charts" as c
+import "orb:std/short" as s
+motion "Charts written in Orb" 16:9 9s
+  s.backdrop
+  text "SAME BRIEF, TOKENS WRITTEN" at=0 dur=4.5 box=192,70,1536,90 size=58 weight=900 align=center color=#fff in=rise
+  c.race [3765, 3892, 4293, 154] ['Plain HTML', 'GSAP', 'anime.js', 'Orb'] at=.3 dur=4.2 y=.26 unit=' tokens' best='min' color=#FF5A7A peak=#7CF4A0 badge='SAME VIDEO'
+  text "MODEL SPEED" at=4.5 dur=4.5 box=192,70,1536,90 size=58 weight=900 align=center color=#fff in=rise
+  c.bars [82, 64, 120] ['Model A', 'Model B', 'Model C'] at=4.7 dur=4.3 x=.25 w=.5 badge='FASTEST' unit=' tok/s'

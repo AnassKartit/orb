@@ -1,0 +1,9 @@
+motion "Orb hardening" 16:9 4s
+  text "SYNTHETIC *SOUND*" at=0 dur=4 box=260,220,1400,180 size=120 align=center stroke="4px #000" shadow="0 6px 8px #000" in=pop
+    punch at=1 dur=.5 scale=1.12
+  rect at=0 color=#102438
+  text "Safe, fitted typography" at=0 box=360,560,1200,100 size=64 align=center
+  sfx whoosh at=0
+  sfx pop at=1
+  sfx ping at=2
+  sfx click at=3
