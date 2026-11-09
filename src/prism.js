@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { expand, LangError } = require('./lang');
-const { makeTheme } = require('./theme');
+const { makeTheme, LOOKS, lookCss, rule, luminance } = require('./theme');
 const FONT_STACKS = {
   sans: 'Inter,"Segoe UI",system-ui,-apple-system,sans-serif',
   serif: '"Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif',
@@ -22,15 +22,50 @@ const ELEMENTS = ['eyebrow', 'title', 'sub', 'text', 'count', 'bars', 'line', 'd
 const CONTAINERS = ['machine', 'state', 'panel', 'grid', 'row', 'col', 'world', 'stage', 'table', 'diagram'];
 const VERBS = ['talk', 'nod', 'wave', 'laugh', 'look', 'idle', 'cheer', 'sad', 'hop', 'feel'];
 const MOODS = ['neutral', 'happy', 'sad', 'surprised', 'angry', 'sleepy', 'love'];
+const KINDS = ['owl', 'robot', 'fox', 'cat'];   // characters that share one rig; each is drawn in src/runtime.js
 const LAYOUTS = ['stack', 'columns', 'left', 'slide'];
 const ANIMS = ['lift', 'wipe', 'fade', 'rise', 'pop', 'slide-l', 'slide-r', 'type', 'blur', 'grow', 'draw', 'sweep', 'count', 'none'];
 const EASES = ['out', 'inout', 'back', 'linear', 'expo', 'spring'];
 const EASE_FN = /^(spring\([\d.]+\)|(in|out|inOut)\([\d.]+\))$/;
 const THEMES = ['slate', 'aurora', 'sunset', 'paper', 'ms'];
+// The older named themes fix their own mode. The colour is the accent used when one slide needs the other mode's palette.
+const THEME_MODE = { aurora: ['dark', '#6ea8ff'], sunset: ['dark', '#ff7a6b'], paper: ['light', '#2a78d6'], ms: ['light', '#0078d4'] };
+const MOTION_OPTIONS = ['bg', 'accent', 'font', 'numbers', 'present', 'loop', 'corner', 'speed', 'mode', 'look', 'transition', 'build', 'slide-bg', 'slide-dim'];
+const SCENE_OPTIONS = ['layout', 'bg', 'dim', 'mode', 'in', 'out', 'align', 'valign'];
+const DECK_WIDE = { in: 'transition', dim: 'slide-dim', bg: 'slide-bg' };   // a scene option, and its name for the whole deck on the motion line
+const TRANSITIONS = ['fade', 'slide', 'zoom', 'wipe', 'none'];                                                   // how a slide arrives
+const BUILDS = ['fade', 'rise', 'pop', 'blur', 'type', 'slide-l', 'slide-r', 'lift', 'wipe', 'grow', 'none'];   // how a slide component enters
+const IMAGE_FILE = /\.(png|jpe?g|webp|gif|svg|avif)$/i;
 const DEFAULT_IN = { eyebrow: 'fade', rule: 'grow', title: 'rise', sub: 'fade', text: 'fade', count: 'count', bars: 'grow', line: 'draw', donut: 'sweep', shape: 'pop', orb: 'pop',
   diagram: 'none', node: 'none', edge: 'none', zone: 'none', shot: 'none', caption: 'none', table: 'none', tabs: 'fade', legend: 'fade', world: 'none', stage: 'none', mascot: 'none', toy: 'none', act: 'none', camera: 'none', audio: 'none',
   heading: 'lift', lede: 'fade', panel: 'lift', grid: 'none', row: 'none', col: 'none', card: 'lift', steps: 'lift', outcome: 'lift', bullets: 'fade',
   banner: 'wipe', hub: 'pop', cover: 'fade', divider: 'fade', image: 'fade', plus: 'pop', note: 'fade' };
+
+// ---- options ----
+// Every element that is a box on the page (text, charts, slide parts, images, shapes) takes the same options; the
+// runtime applies them in one place. Each element adds its own. Drawn worlds, characters and diagrams take only their own.
+const UNIVERSAL = ['color', 'font', 'size', 'weight', 'align', 'x', 'y', 'w', 'h', 'rotate', 'opacity', 'bg', 'pad', 'radius', 'border', 'shadow', 'spacing', 'upper'];
+const TIMING = ['at', 'dur', 'stagger', 'in', 'ease', 'from', 'mt'];
+const CHART = ['title', 'labels', 'values', 'grid', 'colors', 'label-color', 'value-color', 'label-size', 'value-size'];
+const OWN = {
+  bars: [...CHART, 'peak', 'low', 'tone', 'bar', 'peak-color', 'low-color', 'gap', 'tag', 'tag-at'], line: [...CHART, 'unit', 'stroke', 'fill', 'dots'], donut: [...CHART, 'hole'],
+  orb: ['spin', 'particles'], heading: ['tone'], lede: ['tone'], note: ['tone'], panel: ['header', 'soft', 'tint', 'big'], row: ['top'], col: ['header'], card: ['icon', 'label', 'sub'],
+  outcome: ['label', 'icon'], bullets: ['dots'], image: ['image', 'fit'], hub: ['left', 'right', 'lefticon', 'righticon', 'logo'], cover: ['variant', 'sub', 'note', 'logo', 'brand', 'image'],
+  divider: ['chapter', 'image'], table: ['rail'],
+  world: ['sky'], toy: ['skin', 'shirt', 'hair', 'eyes', 'x', 'beard', 'flower'], act: ['to', 'audio', 'text', 'volume', 'mood'], camera: ['push', 'orbit', 'rise', 'pan'], audio: ['volume'],
+  stage: ['bg', 'ground'], mascot: ['kind', 'color', 'size', 'belly', 'beak', 'x', 'y', 'mood'],
+  diagram: ['steps'], node: ['icon', 'step', 'x', 'y', 'image', 'logo'], edge: ['color', 'style', 'label'], zone: ['ids'], shot: ['ids', 'dim'], caption: ['sub'],
+};
+const DRAWN = ['world', 'toy', 'act', 'camera', 'audio', 'stage', 'mascot', 'diagram', 'node', 'edge', 'zone', 'shot', 'caption'];
+const NUMBER = /^\d*\.?\d+$/, SIGNED = /^-?\d*\.?\d+(px|deg)?$/, LENGTH = /^\d*\.?\d+(px|%)?$/;
+// What a value must look like, with the example the error shows. Colours, backgrounds, borders and shadows are free CSS.
+const VALUE = {
+  x: [SIGNED, 'x=-40'], y: [SIGNED, 'y=24'], rotate: [SIGNED, 'rotate=-4'], w: [LENGTH, 'w=320 or w=50%'], h: [LENGTH, 'h=200'], opacity: [/^(0?\.\d+|[01])$/, 'opacity=.6'],
+  weight: [/^([1-9]00|normal|bold)$/, 'weight=800'], pad: [/^\d*\.?\d+(px)?$/, 'pad=16'], spacing: [/^-?\d*\.?\d+(px|em)?$/, 'spacing=.2em'],
+  'label-size': [NUMBER, 'label-size=18'], 'value-size': [NUMBER, 'value-size=24'], gap: [NUMBER, 'gap=10'], hole: [/^(0?\.\d+|[01])$/, 'hole=.6'],
+};
+const CHOICE = { align: ['left', 'center', 'right'], upper: ['on', 'off'], fit: ['cover', 'contain'], values: ['on', 'off'], grid: ['on', 'off'], fill: ['on', 'off'], dots: ['on', 'off'] };
+const SIZE_WORD = { heading: ['s'], lede: ['s'], note: ['s'], bullets: ['s', 'xs'] };   // the named sizes some slide parts already had
 
 class PrismError extends Error {
   constructor(line, msg) { super(`line ${line}: ${msg}`); this.line = line; }
@@ -50,6 +85,50 @@ function expect(line, kind, value, allowed) {
   const best = allowed.map(a => [a, distance(a, value)]).sort((x, y) => x[1] - y[1])[0];
   const hint = best && best[1] <= 2 ? `, did you mean '${best[0]}'?` : `. Options: ${allowed.join(', ')}`;
   throw new PrismError(line, `unknown ${kind} '${value}'${hint}`);
+}
+
+// A slide background: a colour, a gradient or a picture that sits next to the source file.
+function background(line, value) {
+  if (IMAGE_FILE.test(value) || /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value) || /^(linear|radial|conic)-gradient\([^;{}]*\)$/.test(value)) return value;
+  const cut = /gradient\(/.test(value) ? ' Write the gradient without spaces: a space before # starts a comment.' : '';
+  throw new PrismError(line, `background '${value}' must be a colour (#101828), a gradient ("linear-gradient(135deg,#1b2340,#3b0f4f)") or an image file (photo.jpg).${cut}`);
+}
+// Light text or dark text on it? A dark background takes light text; a picture counts as dark. Unknown colours keep the deck's mode.
+function backgroundMode(value) {
+  if (IMAGE_FILE.test(value)) return 'dark';
+  const stops = value.match(/#[0-9a-f]{3,8}\b/gi);
+  return stops ? (stops.reduce((sum, c) => sum + luminance(c), 0) / stops.length < 0.18 ? 'dark' : 'light') : undefined;
+}
+function dimValue(line, key, value) {
+  const d = Number(value);
+  if (!(d >= 0 && d <= 1)) throw new PrismError(line, `${key} must be a number from 0 to 1, e.g. ${key}=.4`);
+  return d;
+}
+
+// Every option on an element must be one it takes, and universal values must have the right shape.
+function checkOptions(el, named) {
+  const n = el.line, type = el.type;
+  const allowed = [...(OWN[type] || []), ...(DRAWN.includes(type) ? [] : UNIVERSAL), ...TIMING];
+  for (const [key, value] of Object.entries(named)) {
+    if (type === 'donut' && /^\d*\.?\d+%?$/.test(value) && !allowed.includes(key)) { (el.slices = el.slices || []).push(key); continue; }   // a donut slice: any other name, with a number
+    if (!allowed.includes(key)) {
+      const best = allowed.map(a => [a, distance(a, key)]).sort((x, y) => x[1] - y[1])[0];
+      throw new PrismError(n, `unknown option '${key}' on ${type}${best[1] <= 2 && best[1] < key.length / 2 ? `, did you mean '${best[0]}'?` : '.'} ${type} takes: ${allowed.join(' ')}`);
+    }
+    if (DRAWN.includes(type)) continue;
+    if (key === 'radius' && type !== 'bars' ? !/^\d*\.?\d+(px|%)?$/.test(value) : key === 'radius' && !NUMBER.test(value)) throw new PrismError(n, `radius must be a number, e.g. radius=12`);
+    if (VALUE[key] && !VALUE[key][0].test(value)) throw new PrismError(n, `${key} must look like ${VALUE[key][1]}, found '${value}'`);
+    if (CHOICE[key] && !(key === 'align' && type === 'col')) expect(n, key, value, CHOICE[key]);
+    if (key === 'size' && !/^\d*\.?\d+(px|x)?$/.test(value) && !(SIZE_WORD[type] || []).includes(value))
+      throw new PrismError(n, `size must be pixels (size=40) or a multiple of the usual size (size=1.4x)${SIZE_WORD[type] ? `, or ${SIZE_WORD[type].join(' or ')}` : ''}, found '${value}'`);
+    if (key === 'font') el.named.font = FONT_STACKS[value] || `"${value.replace(/"/g, '')}",${FONT_STACKS.sans}`;
+  }
+  if (type === 'bars' && named['tag-at'] !== undefined) {   // the bar a tag sits on: its position (1 is the first) or its label
+    const count = el.args.filter(a => Number.isFinite(parseFloat(a))).length, labels = named.labels && named.labels !== 'off' ? named.labels.split(',') : [];
+    const at = labels.includes(named['tag-at']) ? labels.indexOf(named['tag-at']) : NUMBER.test(named['tag-at']) ? named['tag-at'] - 1 : -1;
+    if (!(Number.isInteger(at) && at >= 0 && at < count)) throw new PrismError(n, `tag-at must be a bar's position (1 to ${count})${labels.length ? ` or one of its labels (${labels.join(', ')})` : ''}, found '${named['tag-at']}'`);
+    el.tagAt = at;
+  }
 }
 
 const seconds = (s) => {
@@ -95,6 +174,7 @@ function parse(source, opts = {}) {
         else if (seconds(a) !== null) motion.dur = seconds(a);
         else throw new PrismError(n, `unexpected '${a}' on motion line (expected WxH or a duration like 8s)`);
       }
+      if (tk.named.bg && /^#|gradient\(|\.\w+$/.test(tk.named.bg)) throw new PrismError(n, `bg= on the motion line names an older theme (${THEMES.join(', ')}); for a background on every slide write slide-bg=${tk.named.bg}`);
       if (tk.named.bg) { motion.theme = expect(n, 'theme', tk.named.bg, THEMES); motion.explicitBg = tk.named.bg !== 'slate'; }   // 'slate' is the old default, so it does not count as a chosen look
       if (tk.named.accent) { if (!/^#[0-9a-fA-F]{6}$/.test(tk.named.accent)) throw new PrismError(n, "accent must look like #0f6cbd"); motion.accent = tk.named.accent; }
       if (tk.named.font) motion.font = FONT_STACKS[tk.named.font] || `"${tk.named.font.replace(/"/g, '')}",${FONT_STACKS.sans}`;
@@ -104,6 +184,17 @@ function parse(source, opts = {}) {
       if (tk.named.corner) motion.cornerFile = tk.named.corner;
       if (tk.named.speed) { motion.speed = parseFloat(tk.named.speed); if (!(motion.speed > 0.2 && motion.speed < 5)) throw new PrismError(n, 'speed must be between 0.2 and 5'); }
       if (tk.named.mode) motion.mode = expect(n, 'mode', tk.named.mode, ['dark', 'light']);
+      // Slide decks: a ready look, the default way slides arrive and components enter, the default slide background.
+      if (tk.named.look) { if (tk.named.bg) throw new PrismError(n, 'use look= or bg=, not both'); motion.look = expect(n, 'look', tk.named.look, Object.keys(LOOKS)); }
+      if (tk.named.transition) motion.transition = expect(n, 'transition', tk.named.transition, TRANSITIONS);
+      if (tk.named.build) motion.build = expect(n, 'build', tk.named.build, BUILDS);
+      if (tk.named['slide-bg']) motion.slideBg = background(n, tk.named['slide-bg']);
+      if (tk.named['slide-dim']) motion.slideDim = dimValue(n, 'slide-dim', tk.named['slide-dim']);
+      for (const key of Object.keys(tk.named)) {   // a name close to a known option is a typo; other names pass, as before
+        if (key !== 'bg' && DECK_WIDE[key]) throw new PrismError(n, `${key}= goes on a scene line; for every slide write ${DECK_WIDE[key]}= on the motion line`);
+        const best = MOTION_OPTIONS.map(o => [o, distance(o, key)]).sort((x, y) => x[1] - y[1])[0];
+        if (best[1] > 0 && best[1] <= 2 && best[1] < key.length) throw new PrismError(n, `unknown motion option '${key}', did you mean '${best[0]}'?`);
+      }
       return;
     }
     if (!motion) throw new PrismError(n, "file must start with a 'motion' line");
@@ -118,7 +209,22 @@ function parse(source, opts = {}) {
       if (end <= start) throw new PrismError(n, 'scene must end after it starts');
       cursor = end;
       stack = [];
-      scene = { start, end, els: [], layout: tk.named.layout ? expect(n, 'layout', tk.named.layout, LAYOUTS) : null };
+      for (const key of Object.keys(tk.named)) {
+        const own = Object.keys(DECK_WIDE).find(k => DECK_WIDE[k] === key);
+        if (own) throw new PrismError(n, `${key}= goes on the motion line; on a scene write ${own}=`);
+        expect(n, 'scene option', key, SCENE_OPTIONS);
+      }
+      scene = { start, end, els: [], layout: tk.named.layout ? expect(n, 'layout', tk.named.layout, LAYOUTS) : null, line: n };
+      const bg = tk.named.bg ? background(n, tk.named.bg) : motion.slideBg;
+      const dim = tk.named.dim !== undefined ? dimValue(n, 'dim', tk.named.dim) : motion.slideDim;
+      if (tk.named.mode) expect(n, 'mode', tk.named.mode, ['dark', 'light']);
+      if (bg) { scene.bg = bg; scene.mode = tk.named.mode || backgroundMode(bg); if (dim) scene.dim = dim; }
+      else if (tk.named.mode || tk.named.dim !== undefined) throw new PrismError(n, `${tk.named.mode ? 'mode' : 'dim'}= on a scene goes with bg=, e.g. scene 5s bg=photo.jpg dim=.4`);
+      const arrive = tk.named.in ? expect(n, 'transition', tk.named.in, TRANSITIONS) : motion.scenes.length ? motion.transition : null;   // the deck default skips the first slide
+      if (tk.named.align) scene.align = expect(n, 'align', tk.named.align, ['left', 'center', 'right']);
+      if (tk.named.valign) scene.valign = expect(n, 'valign', tk.named.valign, ['top', 'center', 'bottom']);
+      if (arrive && arrive !== 'none') scene.in = arrive;
+      if (tk.named.out) scene.out = expect(n, 'exit', tk.named.out, ['fade', 'none']);
       motion.scenes.push(scene);
       return;
     }
@@ -135,11 +241,12 @@ function parse(source, opts = {}) {
       expect(n, 'element', head, ELEMENTS);
       const el = { type: head, text: tk.text, args: tk.args, named: {}, line: n };
       for (const [k, v] of Object.entries(tk.named)) el.named[k] = v;
+      checkOptions(el, tk.named);
       while (stack.length && stack[stack.length - 1].indent >= indent) stack.pop();
       const parent = stack.length ? stack[stack.length - 1].el : null;
       if (parent && !CONTAINERS.includes(parent.type)) throw new PrismError(n, `'${parent.type}' cannot contain other elements (containers: ${CONTAINERS.join(', ')})`);
       const siblings = parent ? parent.children : scene.els;
-      const inA = el.named.in || DEFAULT_IN[head];
+      const inA = el.named.in || (BUILT.includes(head) && motion.build) || DEFAULT_IN[head];
       el.in = expect(n, 'animation', inA, ANIMS);
       if (el.named.ease) el.ease = EASE_FN.test(el.named.ease) ? el.named.ease : expect(n, 'ease', el.named.ease, EASES);
       const prev = siblings[siblings.length - 1];
@@ -178,13 +285,15 @@ function parse(source, opts = {}) {
 
 // Automatic composition: authors describe content; the compiler picks a designed layout.
 const DECK = ['table', 'tabs', 'legend', 'heading', 'lede', 'panel', 'grid', 'row', 'col', 'card', 'steps', 'outcome', 'bullets', 'banner', 'hub', 'cover', 'divider', 'image', 'plus', 'note'];
+// build= on the motion line sets how these enter. Layout boxes and full-slide covers keep their own default.
+const BUILT = DECK.filter(type => !['grid', 'row', 'col', 'cover', 'divider'].includes(type));
 function compose(sc, motion) {
   if (!sc.layout && sc.els.some(e => DECK.includes(e.type))) { sc.layout = 'slide'; return; }
   const charts = sc.els.filter(e => ['bars', 'line', 'donut'].includes(e.type)).length;
   const hasCount = sc.els.some(e => e.type === 'count');
   if (!sc.layout) sc.layout = charts >= 2 ? 'columns' : (hasCount && charts >= 1 ? 'left' : 'stack');
   const width = { stack: 760, columns: 500, left: 1040 }[sc.layout];
-  for (const e of sc.els) { if (e.type === 'bars' || e.type === 'line') e.w = width; if (e.type === 'donut') { const parts = Object.values(e.named).filter(v => Number.isFinite(parseFloat(v))).length; e.w = sc.layout === 'columns' ? (parts > 3 ? 240 : 300) : 340; } }
+  for (const e of sc.els) { if (e.type === 'bars' || e.type === 'line') e.w = width; if (e.type === 'donut') e.w = sc.layout === 'columns' ? (e.slices.length > 3 ? 240 : 300) : 340; }
   // chart scenes with no heading get one from the piece title
   if (charts && !sc.els.some(e => ['title', 'eyebrow', 'sub'].includes(e.type)))
     sc.els.unshift({ type: 'eyebrow', text: [motion.title.toUpperCase()], args: [], named: {}, in: 'fade', at: 0, dur: 0.6, stagger: 0, line: sc.els[0].line });
@@ -204,6 +313,8 @@ function validate(el) {
   if (['tabs', 'legend'].includes(el.type) && !el.text.length) throw new PrismError(n, `${el.type} needs quoted labels, e.g. ${el.type} "One" "Two"`);
   if (el.type === 'mascot' && !el.text[0]) throw new PrismError(n, 'mascot needs a name, e.g. mascot "Hoot" color=#58cc02');
   if (el.type === 'mascot' && el.named.mood) expect(n, 'mood', el.named.mood, MOODS);
+  if (el.type === 'mascot' && el.named.kind) expect(n, 'kind', el.named.kind, KINDS);
+  if (el.type === 'stage' && el.named.bg && !/^(sky|#[0-9a-f]{3,8}(,#[0-9a-f]{3,8})?)$/i.test(el.named.bg)) throw new PrismError(n, `stage bg must be sky or one or two colours (bg="#0b1020,#1b2a55"), found '${el.named.bg}'; leave it out for the studio backdrop`);
   if (el.type === 'toy' && !el.text[0]) throw new PrismError(n, 'toy needs a name, e.g. toy "Milo" shirt=#2f9aa0');
   if (el.type === 'act') {
     if (!el.text[0] || !el.args[0]) throw new PrismError(n, 'act needs a name and a verb, e.g. act "Milo" talk at=1 dur=3');
@@ -236,8 +347,7 @@ function validate(el) {
   if ((el.type === 'bars' || el.type === 'line') && nums().length < 2)
     throw new PrismError(n, `${el.type} needs at least two numbers, e.g. ${el.type} 12 18 15`);
   if (el.type === 'donut') {
-    const vals = Object.values(el.named).map(parseFloat).filter(Number.isFinite);
-    if (vals.length < 2) throw new PrismError(n, 'donut needs two or more slices, e.g. donut web=52 app=31');
+    if ((el.slices || []).length < 2) throw new PrismError(n, 'donut needs two or more slices, e.g. donut web=52 app=31');
   }
 }
 
@@ -298,19 +408,31 @@ function inlineImages(els, baseDir, assets) {
 const AUTO_ACCENTS = ['#0ea5a4', '#7c5cff', '#f97316', '#22c55e', '#3b82f6', '#e11d48', '#eab308', '#06b6d4'];
 const AUTO_FONTS = ['sans', 'rounded', 'condensed', 'sans', 'serif', 'rounded', 'sans', 'display'];
 function compile(source, opts = {}) {
-  const motion = parse(source, opts);
+  const motion = parse(source, opts), baseDir = opts.baseDir || process.cwd();
+  if (motion.look) { motion.accent = motion.accent || LOOKS[motion.look].accent; motion.mode = motion.mode || LOOKS[motion.look].mode; }
   if (!motion.accent && !motion.explicitBg && !motion.autoOff) {   // no look chosen: derive a distinct, validated one from the title
     let hsh = 0; for (const ch of motion.title) hsh = (hsh * 31 + ch.charCodeAt(0)) >>> 0;
     motion.accent = AUTO_ACCENTS[hsh % AUTO_ACCENTS.length]; motion.mode = motion.mode || 'dark';
     if (!motion.font) motion.font = FONT_STACKS[AUTO_FONTS[(hsh >>> 3) % AUTO_FONTS.length]];
   }
+  const named = THEME_MODE[motion.theme];
+  motion.mode = named ? named[0] : motion.mode || 'dark';   // the page carries it as data-mode, which the slide colours follow
   const assets = {};
-  if (motion.cornerFile) { const holder = { named: { image: motion.cornerFile }, line: 1 }; inlineImages([holder], opts.baseDir || process.cwd(), assets); motion.corner = holder.named.image; }
-  for (const sc of motion.scenes) inlineImages(sc.els, opts.baseDir || process.cwd(), assets);
+  const embed = (file, line) => { const holder = { named: { image: file }, line }; inlineImages([holder], baseDir, assets); return holder.named.image; };
+  if (motion.cornerFile) motion.corner = embed(motion.cornerFile, 1);
+  for (const sc of motion.scenes) {
+    if (sc.bg && IMAGE_FILE.test(sc.bg)) sc.bg = embed(sc.bg, sc.line);
+    inlineImages(sc.els, baseDir, assets);
+  }
   motion.assets = Object.fromEntries(Object.values(assets).map(a => [a.id, a.uri]));
-  if (motion.accent) { const t = makeTheme(motion.accent, motion.mode); motion.themeCss = t.css; motion.themeReport = t.report; }
-  if (motion.font) motion.themeCss = (motion.themeCss || '') + `:root,body{--font:${motion.font}}`;
-  require('./player-audio').prepare(motion, opts.baseDir || process.cwd(), PrismError);
+  let css = '';
+  if (motion.accent) { const t = makeTheme(motion.accent, motion.mode); css = t.css; motion.themeReport = t.report; }
+  const other = motion.mode === 'dark' ? 'light' : 'dark';   // a slide whose background asks for the other mode gets that palette
+  if (motion.scenes.some(sc => sc.mode === other)) css += rule(`.scene[data-mode="${other}"]`, makeTheme(motion.accent || named[1], other).vars);
+  if (motion.look) css += lookCss(motion.look, motion.mode);
+  if (motion.font) css += rule(':root,body', { '--font': motion.font }) + (motion.look ? rule('[data-mode]', { '--head-font': 'inherit' }) : '');   // font= also replaces a look's heading font
+  if (css) motion.themeCss = css;
+  require('./player-audio').prepare(motion, baseDir, PrismError);
   const scene = JSON.stringify(motion).replace(/</g, '\\u003c');
   const dir = __dirname;
   const template = fs.readFileSync(path.join(dir, 'template.html'), 'utf8');

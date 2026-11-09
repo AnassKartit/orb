@@ -1,0 +1,35 @@
+# Six slides, each dressed a different way: backgrounds, slide transitions and builds on one ready look.
+motion "Reading a tide table" 1280x720 look=midnight transition=fade build=rise numbers=on present=on
+  scene 5s bg="linear-gradient(135deg,#0b1020,#6b2a1a)"
+    cover "Reading a tide table" sub="A short guide for people who walk the shore" note="Six slides, six ways to dress them"
+  scene 5s in=slide
+    heading "Two highs and two lows most days"
+    row
+      card icon=info label="High water" "The sea reaches its top mark about every 12 hours 25 minutes"
+      card icon=info label="Low water" "About six hours later the flats are open"
+      card icon=check label="Slack water" "Around each turn the current almost stops" in=pop
+  scene 5s in=zoom bg="linear-gradient(135deg,#1b2340,#3b0f4f)"
+    heading "What one line of the table says"
+    row
+      panel header="How to read it" in=slide-l
+        steps "Find today's date" "Read the four times" "Read the height next to each time"
+        outcome "You know when the sand is dry" label="Result"
+      panel header="Heights" tint=on in=slide-r
+        lede "Heights are measured from the lowest level the chart expects, so a bigger number means deeper water."
+  scene 5s in=wipe bg=#f4efe6
+    heading "Springs and neaps"
+    table rail="Phase of the moon" in=grow
+      col header="New moon and full moon"
+        bullets "**Spring tides**" "Highest highs and lowest lows" "The widest strip of open sand"
+      col header="Half moon"
+        bullets "**Neap tides**" "The smallest range of the month" "Less sand shows, for less time"
+    note "A light slide inside a dark deck: its text turns dark by itself" in=type dur=1.6
+  scene 5s in=slide out=fade
+    heading "Before you set out"
+    grid 3
+      card icon=clipboard "Look up the next high water"
+      card icon=shield "Add a margin for wind and swell"
+      card icon=users "Tell someone where you are going"
+    banner "Start walking back while the tide is still going out" in=wipe ease=inout
+  scene 5s in=fade bg="linear-gradient(135deg,#0b1020,#6b2a1a)"
+    cover "Mind the tide" variant=thanks sub="Tables are printed for every harbour"

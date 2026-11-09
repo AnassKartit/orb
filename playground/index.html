@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orb playground</title>
 <style>
-  :root { --page: #0b0f1a; --panel: #0e1220; --line: #222a40; --ink: #e8ebff; --quiet: #8e98c0; --blue: #6ea8ff; --good: #4ade80; --code: 13px/20px ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; }
+  :root { color-scheme: dark; --page: #0b0f1a; --panel: #0e1220; --line: #222a40; --ink: #e8ebff; --quiet: #8e98c0; --blue: #6ea8ff; --good: #4ade80; --code: 13px/20px ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, monospace; }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body { display: flex; flex-direction: column; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -13,6 +13,8 @@
   header, footer, .bar, .row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
   header, footer, .bar { background: var(--panel); }
   header { padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  a.out { color: inherit; font-size: 13px; text-decoration: none; border-bottom: 1px solid currentColor; opacity: .75; }
+  a.out:hover { opacity: 1; }
   .brand { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-right: auto; }
   h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: .01em; }
   label, .quiet { color: var(--quiet); }
@@ -38,18 +40,42 @@
   #lesson-done::before { content: "\2713\00a0"; }
   #lesson-say code { padding: 1px 6px; }
 
-  /* editor */
+  /* editor: a plain-text editable block, so long lines wrap with a hanging indent and nothing scrolls sideways */
   .tabs { display: flex; gap: 4px; align-self: flex-end; margin: 0 auto -7px 0; }
   .tabs button { border-radius: 8px 8px 0 0; border-bottom-color: transparent; background: transparent; color: var(--quiet); }
   .tabs button[aria-selected="true"] { background: var(--page); color: var(--ink); }
   #editor, #expanded, #frames { flex: 1; min-height: 0; }
   #editor { position: relative; display: flex; min-height: 110px; overflow: hidden; }
-  #gutter, #source, #expanded { margin: 0; padding: 12px 0; font: var(--code); tab-size: 2; }
-  #gutter { width: 44px; padding-right: 10px; overflow: hidden; color: #55608a; text-align: right; user-select: none; }
+  #gutter, #source, #measure, #expanded { margin: 0; padding: 12px 0; font: var(--code); tab-size: 2; }
+  #gutter { flex: none; width: 44px; padding-right: 10px; overflow: hidden; color: #55608a; text-align: right; user-select: none; }
   #gutter b { color: #ff9aa8; font-weight: 700; }
-  #mark { position: absolute; left: 0; right: 0; height: 20px; background: #ff4d6d24; border-left: 3px solid #ff4d6d; pointer-events: none; }
-  #source { position: relative; flex: 1; min-width: 0; padding-right: 12px; background: transparent; color: inherit; border: 0; outline: 0; resize: none; white-space: pre; overflow: auto; }
-  #expanded { padding: 12px 16px; overflow: auto; white-space: pre; color: #c9d1f5; }
+  #source, #measure { padding-right: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #source { position: relative; flex: 1; min-width: 0; overflow: hidden auto; outline: 0; text-indent: 8ch hanging each-line; caret-color: var(--ink); }
+  #source:empty::before { content: "Write Orb here, or choose something to add."; color: #55608a; }
+  #measure { position: absolute; left: 0; top: 0; height: 0; overflow: hidden; visibility: hidden; }
+  #measure div { min-height: 20px; text-indent: 8ch hanging; }
+  #mark, #current { position: absolute; left: 0; right: 0; pointer-events: none; }
+  #mark { background: #ff4d6d24; border-left: 3px solid #ff4d6d; }
+  #current { background: #6ea8ff14; border-left: 3px solid #6ea8ff66; }
+  #expanded { padding: 12px 16px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; color: #c9d1f5; }
+
+  /* properties of the line the cursor is on */
+  #panel { display: flex; flex-direction: column; gap: 6px; max-height: 112px; padding: 6px 16px; overflow: auto; background: #0d1426; border-top: 1px solid var(--line); }
+  #panel > .row { position: sticky; top: -6px; padding: 2px 0; background: #0d1426; }   /* the word stays in view while the controls scroll */
+  #panel-word { font: var(--code); font-weight: 700; color: #9cc2ff; }
+  #panel-fields { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .field { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+  .field > span { color: var(--quiet); }
+  .field input, .field select { padding: 2px 6px; background: #1b2340; color: var(--ink); border: 1px solid #2c3658; border-radius: 6px; font: inherit; }
+  .field input[type="number"] { width: 68px; }
+  .field input[type="text"] { width: 150px; }
+  .field.wide input[type="text"] { width: 280px; }
+  .field input[type="color"] { width: 24px; height: 24px; padding: 0; }
+  .field input[type="range"] { width: 90px; padding: 0; accent-color: var(--blue); }
+  .field output { min-width: 2.2em; font-variant-numeric: tabular-nums; }
+  .field.unset input, .field.unset select, .field.unset output { opacity: .45; }
+  .field.unset .clear { visibility: hidden; }
+  .field .clear { padding: 0 6px; border-radius: 6px; line-height: 18px; color: var(--quiet); }
 
   /* colours and media of the file */
   #palette { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; background: var(--panel); border-top: 1px solid var(--line); }
@@ -87,17 +113,21 @@
   footer button { padding: 3px 10px; }
   [hidden] { display: none !important; }
 
-  /* phone: one column, the editor above the preview, the page scrolls */
+  /* phone: one column and the page scrolls. The preview comes right after the editor, the tools after it. */
   @media (max-width: 800px) {
     html, body { height: auto; }
     main { flex-direction: column; }
-    #left { width: auto; min-width: 0; border-right: 0; }
-    header label { display: none; }
+    #left, #right { display: contents; }
+    #lesson { order: 0; padding: 10px 16px; }
+    #left .bar { order: 1; }
+    #editor, #expanded { order: 2; flex: none; height: 160px; }
+    #frames { order: 3; flex: none; height: calc(56.25vw + 56px); min-height: 260px; }
+    #panel { order: 4; }
+    #palette { order: 5; }
+    #status { order: 6; }
+    #right .bar { order: 7; border-bottom: 0; }
+    header label, .bar label { display: none; }
     select { max-width: 150px; }
-    #lesson { padding: 10px 16px; }
-    #editor, #expanded { flex: none; height: 160px; }
-    #frames { flex: none; height: calc(56.25vw + 56px); min-height: 260px; }
-    #right .bar { order: 1; border-top: 1px solid var(--line); border-bottom: 0; }   /* the result comes right after the editor */
     #hint { bottom: 68px; }
   }
 </style>
@@ -113,6 +143,8 @@
   <select id="samples"><option value="">Choose a sample</option></select>
   <button id="share" type="button">Copy link</button>
   <span id="shared" role="status"></span>
+  <a class="out" href="/blog/orb-language-for-llms-motion-graphics">Read the article</a>
+  <a class="out" href="https://github.com/AnassKartit/orb" rel="noopener">GitHub</a>
 </header>
 <main>
   <section id="left" aria-label="Source">
@@ -129,6 +161,10 @@
         <button id="lesson-next" type="button" class="primary">Next</button>
         <button id="lesson-samples" type="button" class="primary" hidden>Open the samples</button>
         <button id="lesson-empty" type="button" hidden>Start from an empty file</button>
+        <span class="row" style="margin-left:auto">
+          <button id="lesson-menu" type="button">Samples</button>
+          <button id="lesson-skip" type="button">Skip to the editor</button>
+        </span>
       </div>
     </section>
     <div class="bar">
@@ -136,15 +172,22 @@
         <button id="tab-source" type="button" role="tab" aria-selected="true">Source</button>
         <button id="tab-expanded" type="button" role="tab" aria-selected="false">Expanded</button>
       </div>
-      <button id="add-media" type="button">Add image or video</button>
+      <label for="add">Add</label>
+      <select id="add" aria-label="Add a ready line"><option value="">Choose what to add</option></select>
       <input id="media-file" type="file" hidden>
     </div>
     <div id="editor">
+      <div id="current" hidden></div>
       <div id="mark" hidden></div>
       <pre id="gutter" aria-hidden="true"></pre>
-      <textarea id="source" aria-label="Orb source" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off"></textarea>
+      <div id="source" contenteditable="plaintext-only" role="textbox" aria-multiline="true" aria-label="Orb source" spellcheck="false" autocapitalize="off"></div>
+      <div id="measure" aria-hidden="true"></div>
     </div>
     <pre id="expanded" tabindex="0" hidden></pre>
+    <div id="panel" hidden>
+      <div class="row"><strong id="panel-word"></strong><span id="panel-where" class="quiet"></span></div>
+      <div id="panel-fields"></div>
+    </div>
     <div id="palette" hidden>
       <div id="swatches" role="group" aria-label="Colours in this file"></div>
       <div id="chips" role="group" aria-label="Media files in this file"></div>
@@ -191,6 +234,8 @@
   <span class="quiet">The MCP server gives a model the cheat sheet plus check, build, expand and render tools.</span>
 </footer>
 <script src="orb-compiler.js"></script>
+<script src="edit.js"></script>
+<script src="bridge.js"></script>
 <script src="lessons.js"></script>
 <script src="playground.js"></script>
 </body>

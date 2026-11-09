@@ -1,0 +1,20 @@
+# Four characters on one rig: the same acts, moods and state machines work on each kind.
+motion "The cast" 1280x720 12s accent=#7c5cff mode=dark font=rounded
+  scene 12s
+    stage
+      mascot "Olla" kind=owl color=#7c5cff x=0.14 y=0.86 size=0.72
+      mascot "Bolt" kind=robot color=#19c3b2 x=0.38 y=0.86 size=0.72
+      mascot "Rusty" kind=fox color=#f2762e x=0.62 y=0.86 size=0.72
+      mascot "Miso" kind=cat color=#5b6b8c x=0.86 y=0.86 size=0.72
+      act "Olla" wave at=0.4 dur=1.6
+      act "Bolt" wave at=0.8 dur=1.6
+      act "Rusty" wave at=1.2 dur=1.6
+      act "Miso" wave at=1.6 dur=1.6
+      act "Olla" talk text="Hello, I am the owl." at=3.4 dur=1.8
+      act "Bolt" talk text="I am the robot. Beep." at=5.2 dur=1.8
+      act "Rusty" talk text="The fox, at your service." at=7 dur=1.8
+      act "Miso" talk text="And I am the cat." at=8.8 dur=1.6
+      act "Olla" feel to=happy at=10.4 dur=0.4
+      act "Bolt" feel to=love at=10.4 dur=0.4
+      act "Rusty" cheer at=10.4 dur=1.5
+      act "Miso" feel to=surprised at=10.4 dur=0.4

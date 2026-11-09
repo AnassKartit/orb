@@ -1,11 +1,13 @@
 // Orb playground: source on the left, the playing result on the right, all in this page.
-// orb-compiler.js is the compiler the command line uses, bundled for the browser by scripts/build-playground.js:
-// Orb.preview(source) returns a page for either kind of file. lessons.js holds the steps of Learn Orb.
+//   orb-compiler.js  the compiler the command line uses, bundled for the browser (scripts/build-playground.js)
+//   edit.js          reading and rewriting one Orb line, the panel's table of controls, the Add menu
+//   bridge.js        the code that runs inside the preview
+//   lessons.js       the steps of Learn Orb
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
-  const source = $('source'), gutter = $('gutter'), mark = $('mark'), expanded = $('expanded'), samples = $('samples');
-  const palette = $('palette'), swatches = $('swatches'), chips = $('chips'), hint = $('hint');
+  const source = $('source'), gutter = $('gutter'), measure = $('measure'), mark = $('mark'), current = $('current'), expanded = $('expanded');
+  const samples = $('samples'), palette = $('palette'), swatches = $('swatches'), chips = $('chips'), hint = $('hint'), panel = $('panel'), fields = $('panel-fields');
 
   if (typeof Orb === 'undefined') {
     $('problem').hidden = false;
@@ -38,26 +40,97 @@
   };
 
   // ---------- editor ----------
-  let errorLine = 0;
-  const placeMark = () => { mark.hidden = !errorLine; mark.style.top = `${12 + (errorLine - 1) * 20 - source.scrollTop}px`; };   // 12 px padding, 20 px lines
-  function drawGutter() {
-    const count = source.value.split('\n').length;
-    gutter.innerHTML = Array.from({ length: count }, (_, i) => i + 1 === errorLine ? `<b>${i + 1}</b>` : i + 1).join('\n');
-    gutter.scrollTop = source.scrollTop;
-    placeMark();
+  // The source is a plain-text editable block, not a textarea: only a block can wrap long lines with a hanging
+  // indent, so nothing ever scrolls sideways. It is given the few textarea members the rest of this file uses.
+  // Its content is one run of text. A browser may still split lines into blocks (a paste, some keyboards): read()
+  // understands those, and tidy() puts the text back in one piece.
+  const read = node => [...node.childNodes].map((child, i) => child.nodeType === 3 ? child.data
+    : child.nodeName === 'BR' ? (node.nodeName === 'DIV' && node !== source && node.childNodes.length === 1 ? '' : '\n')   // a lone <br> only holds an empty line open
+    : (i ? '\n' : '') + read(child)).join('');
+  function locate(offset) {   // a text offset -> [node, offset inside it]
+    const walker = document.createTreeWalker(source, NodeFilter.SHOW_TEXT);
+    let last = null;
+    for (let node = walker.nextNode(); node; last = node, node = walker.nextNode()) {
+      if (offset <= node.length) return [node, offset];
+      offset -= node.length;
+    }
+    return last ? [last, last.length] : [source, 0];
   }
-  source.addEventListener('scroll', () => { gutter.scrollTop = source.scrollTop; placeMark(); });
-  source.addEventListener('keydown', event => {   // Tab indents by one level, which is two spaces in Orb
-    if (event.key !== 'Tab' || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
-    event.preventDefault();
-    source.setRangeText('  ', source.selectionStart, source.selectionEnd, 'end');
-    source.dispatchEvent(new Event('input'));
+  function caret() {   // the caret as a text offset; where it last was when the editor does not hold it
+    const selection = getSelection();
+    if (!selection.rangeCount || !source.contains(selection.focusNode)) return caretAt;
+    const range = document.createRange();
+    range.selectNodeContents(source);
+    range.setEnd(selection.focusNode, selection.focusOffset);
+    return read(range.cloneContents()).length;
+  }
+  let caretAt = 0, indentNext = null;
+  Object.defineProperties(source, {
+    value: { get: () => read(source), set: text => { source.textContent = text; } },
+    selectionStart: { get: caret },
   });
+  source.setSelectionRange = (start, end = start) => {
+    const range = document.createRange(), selection = getSelection();
+    range.setStart(...locate(start));
+    range.setEnd(...locate(end));
+    selection.removeAllRanges();
+    selection.addRange(range);
+    caretAt = start;
+  };
+  function tidy() {
+    if (!source.firstElementChild) return;
+    const at = caret(), held = source.contains(getSelection().focusNode);
+    source.textContent = read(source);
+    if (held) source.setSelectionRange(at);
+  }
+  const lineOf = offset => source.value.slice(0, offset).split('\n').length - 1;
+  const insert = text => document.execCommand('insertText', false, text);   // keeps the browser's undo history
+  source.addEventListener('keydown', event => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key === 'Tab' && !event.shiftKey) { event.preventDefault(); insert('  '); }   // one level is two spaces
+    if (event.key === 'Enter') { const text = source.value, at = caret(); indentNext = text.slice(text.lastIndexOf('\n', at - 1) + 1, at).match(/^ */)[0]; }
+  });
+  source.addEventListener('input', event => {
+    tidy();
+    const indent = indentNext;
+    indentNext = null;
+    if (indent && /insertLineBreak|insertParagraph/.test(event.inputType)) insert(indent);   // a new line starts under the start of the line above
+  });
+
+  // Line numbers sit next to the first row of their line. Each line is laid out once more in a hidden copy with
+  // the same width and wrapping, which says how tall it is.
+  let errorLine = 0, panelLine = 0, tops = [0], heights = [];
+  function placeBand(band, index) {
+    band.hidden = index < 0 || index >= heights.length || !$('editor').offsetHeight;
+    if (!band.hidden) band.style.cssText = `top:${12 + tops[index] - source.scrollTop}px;height:${heights[index]}px`;   // 12 px of padding above the first line
+  }
+  const placeBands = () => { placeBand(mark, errorLine - 1); placeBand(current, panelLine); };
+  function drawGutter() {
+    const lines = source.value.split('\n');
+    measure.style.width = source.clientWidth + 'px';
+    measure.replaceChildren(...lines.map(line => Object.assign(document.createElement('div'), { textContent: line })));
+    heights = [...measure.children].map(row => row.offsetHeight);
+    tops = [0];
+    for (const height of heights) tops.push(tops[tops.length - 1] + height);
+    gutter.replaceChildren(...lines.map((line, i) => {
+      const number = document.createElement(i + 1 === errorLine ? 'b' : 'span');
+      number.textContent = i + 1;
+      number.style.cssText = `display:block;height:${heights[i]}px`;
+      return number;
+    }));
+    gutter.scrollTop = source.scrollTop;
+    placeBands();
+  }
+  source.addEventListener('scroll', () => { source.scrollLeft = 0; gutter.scrollTop = source.scrollTop; placeBands(); });
+  new ResizeObserver(drawGutter).observe(source);
   function selectLine(index, caretOnly) {
     const lines = source.value.split('\n'), start = lines.slice(0, index).join('\n').length + (index ? 1 : 0), end = start + (lines[index] || '').length;
     show('source');
     source.focus();
     source.setSelectionRange(caretOnly ? end : start, end);
+  }
+  function reveal(index) {   // scroll the editor so that a line can be seen
+    if (tops[index] < source.scrollTop || tops[index] + heights[index] > source.scrollTop + source.clientHeight - 24) source.scrollTop = Math.max(0, tops[index] - 40);
   }
 
   // ---------- tabs ----------
@@ -66,6 +139,7 @@
     expanded.hidden = tab !== 'expanded';
     $('tab-source').setAttribute('aria-selected', tab === 'source');
     $('tab-expanded').setAttribute('aria-selected', tab === 'expanded');
+    if (tab === 'source') drawGutter();
   }
   $('tab-source').onclick = () => show('source');
   $('tab-expanded').onclick = () => show('expanded');
@@ -93,68 +167,25 @@
       source.value = lines.join('\n');
       build();
     };
+    placeBands();
   }
   $('problem-line').onclick = () => { if (errorLine) selectLine(errorLine - 1); };   // jump to the line
 
   // ---------- preview ----------
   // Two stacked frames. A page loads in the one underneath and comes to the front when it says it is ready, so
-  // the picture never goes blank, even while a colour is being dragged. Each page gets previewBridge() added.
+  // the picture never goes blank, even while a colour is being dragged. Each page gets orbPreviewBridge() added.
   let front = $('preview'), back = $('preview-spare');
-  let jobs = 0, shown = null, loading = null, queued = null;   // a job is { id, page, from, build }
+  let jobs = 0, shown = null, loading = null, queued = null;   // a job is { id, page, from, edit, build }
   let clock = { time: 0, playing: true, slide: 0, stamp: Date.now() };   // where the front page is, as it last said
+  let selected = null;   // the item selected in the preview, if any
   const now = () => ({ ...clock, time: clock.time + (clock.playing ? (Date.now() - clock.stamp) / 1000 : 0), stamp: Date.now() });
+  const framed = job => `${job.page.html}<script>${orbPreviewBridge}orbPreviewBridge(${job.id}, ${JSON.stringify(job.from)}, ${JSON.stringify(job.edit)});</script>`;
 
-  // This function runs inside every preview page. It fetches the page's media from the playground, takes over the
-  // clock of the page it replaces, reports its own clock, loops the piece and passes on keys, clicks and drops.
-  function previewBridge(id, from) {
-    const tell = message => parent.postMessage({ orb: id, ...message }, '*');
-    const scenes = window.__PRISM_PRESENT__, slideshow = () => document.body.classList.contains('present');
-    const state = () => scenes ? { time: scenes().t, playing: scenes().playing, slide: scenes().cur } : { time: window.currentTime, playing: !window.paused, slide: 0 };
-    const key = code => dispatchEvent(new KeyboardEvent('keydown', { code }));
-    const at = () => from.time + (from.playing ? (Date.now() - from.stamp) / 1000 : 0);   // the old page's clock, now
-    async function begin() {
-      if (typeof window.seek !== 'function') return setTimeout(begin, 30);
-      for (const note of document.querySelectorAll('.hint')) note.remove();   // the playground shows its own
-      if (from && slideshow()) for (let k = 0; k < 1 + 2 * from.slide; k++) key('ArrowRight');   // per slide: one key starts its build, one finishes it
-      else if (from && scenes) { if (!from.playing) window.pause(); window.seek(at()); }
-      else if (from) {
-        await window.seek(at());   // paused: resolves when video frames are in
-        window.seek(at());
-        if (from.playing && at() < window.duration) window.play();
-      }
-      await Promise.all([...document.images].map(image => image.decode().catch(() => {})));
-      await new Promise(done => { requestAnimationFrame(() => requestAnimationFrame(done)); setTimeout(done, 150); });
-      tell({ ready: true, stamp: Date.now(), ...state() });
-      let ended = 0;
-      setInterval(() => {
-        const here = state(), length = window.duration || window.__PRISM_DURATION__;
-        tell({ stamp: Date.now(), ...here });
-        // A piece that has played to its end holds its last frame for a moment, then starts again.
-        if (slideshow() || here.playing || here.time < length - .05) { ended = 0; return; }
-        ended = ended || Date.now();
-        if (Date.now() - ended < 1500) return;
-        ended = 0;
-        window.seek(0);
-        if (typeof window.play === 'function') window.play(); else document.getElementById('play').click();
-      }, 100);
-    }
-    addEventListener('message', event => {
-      const data = event.data || {};
-      if (data.orbKey) key(data.orbKey);
-      if (!data.orbMedia) return;
-      if (window.__orb) window.__orb.media(Object.fromEntries(Object.entries(data.orbMedia).map(([name, blob]) => [name, URL.createObjectURL(blob)])));
-      begin();
-    });
-    addEventListener('pointerdown', () => tell({ clicked: true }));
-    addEventListener('dragover', event => event.preventDefault());
-    addEventListener('drop', event => { event.preventDefault(); if (event.dataTransfer.files[0]) tell({ drop: event.dataTransfer.files[0] }); });
-    tell({ hello: true });
-  }
-  const framed = job => `${job.page.html}<script>${previewBridge}previewBridge(${job.id}, ${JSON.stringify(job.from)});</script>`;
-
-  // keep: the new page continues where the current one is, instead of starting at 0.
-  function showPage(page, keep) {
-    const job = { id: ++jobs, page, from: keep && shown ? now() : null };
+  // keep: the new page continues where the current one is, instead of starting at 0. playing: whether it then
+  // plays, when that is not what the current page does (it is paused while an item is dragged).
+  function showPage(page, keep, playing) {
+    const job = { id: ++jobs, page, from: keep && shown ? now() : null, edit: { ids: page.movable, select: selected } };
+    if (job.from && playing !== undefined) job.from.playing = playing;
     if (loading) queued = job; else loadPage(job);   // one page loads at a time; of those waiting, the newest wins
     return job;
   }
@@ -174,7 +205,7 @@
     if (document.activeElement === back) front.focus();   // keys keep going to the page on show
     back.srcdoc = '';
     document.body.dataset.shown = job.build;   // lets a test wait until a build is on screen
-    if (queued) { const next = queued; queued = null; if (next.from) next.from = now(); loadPage(next); }
+    if (queued) { const next = queued; queued = null; if (next.from) next.from = { ...now(), playing: next.from.playing }; loadPage(next); }
   }
   // Media files reach a preview as Blobs, which it turns into object URLs. A file is wrapped once.
   const blobs = new WeakMap();
@@ -188,6 +219,8 @@
     if (data.hello) return event.source.postMessage({ orbMedia: mediaFor(job.page) }, '*');
     if (data.drop) return dropped(data.drop);
     if (data.clicked) return hideHint();
+    if ('picked' in data) return pickedInPreview(data.picked);
+    if (data.box) return boxFromPreview(data);
     if (job === loading && data.ready) arrive(job);
     if (job === shown) clock = { time: data.time, playing: data.playing, slide: data.slide, stamp: data.stamp };
   });
@@ -198,7 +231,7 @@
   function hideHint() { hinted = true; hint.hidden = true; }
   addEventListener('keydown', event => {
     const where = document.activeElement.tagName;
-    if (!built || !built.present || event.metaKey || event.ctrlKey || event.altKey || ['TEXTAREA', 'INPUT', 'SELECT'].includes(where)) return;
+    if (!built || !built.present || event.metaKey || event.ctrlKey || event.altKey || ['TEXTAREA', 'INPUT', 'SELECT'].includes(where) || source.contains(document.activeElement)) return;
     const moves = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End'];
     if (!moves.includes(event.code) && !(event.code === 'Space' && where !== 'BUTTON')) return;
     event.preventDefault();
@@ -207,10 +240,23 @@
   });
 
   // ---------- build ----------
-  // An edit builds a new page that starts from 0 (the result replays). A colour or media change builds with
-  // keep, and the new page carries on from the same moment.
-  let builds = 0, built = null, timer = 0, stopRecording = null;
-  function build(keep) {
+  // An edit in the source builds a new page that starts from 0 (the result replays). A change made with a swatch,
+  // the panel, a media chip or a handle builds with keep, and the new page carries on from the same moment.
+  let builds = 0, built = null, timer = 0, soon = 0, stopRecording = null;
+  // The items of a video page that can be moved in the preview: a text, rect, image or video line that makes one
+  // item, has no box or a box of plain numbers, and is not a full-frame backdrop.
+  function movable(page, text) {
+    if (!page.map) return [];
+    const lines = text.split('\n'), uses = {};
+    for (const item of page.map.items) uses[item.line] = (uses[item.line] || 0) + 1;
+    return page.map.items.filter(item => {
+      const line = lines[item.line - 1] || '', box = OrbEdit.get(line, 'box'), [x, y, w, h] = item.box;
+      return uses[item.line] === 1 && ['text', 'rect', 'image', 'video'].includes(OrbEdit.parse(line).word) && (box === undefined || /^-?[\d.]+(?:,-?[\d.]+){3}$/.test(box))
+        && !(x <= 0 && y <= 0 && x + w >= page.width && y + h >= page.height);
+    }).map(item => item.id);
+  }
+  const itemAt = (page, index) => page && page.map ? page.movable.find(id => page.map.ids[id] === index + 1) || null : null;
+  function build(keep, playing) {
     clearTimeout(timer);
     if (stopRecording) return;   // a recording owns the preview; the source is built again when it ends
     const text = source.value, bytes = new TextEncoder().encode(text).length, lines = text.split('\n').filter(line => line.trim()).length;
@@ -224,7 +270,9 @@
       try { expanded.textContent = Orb.expand(text); } catch (error) { expanded.textContent = error.message; }
       try {
         built = Orb.preview(text);
-        showPage(built, keep === true).build = builds + 1;
+        built.movable = movable(built, text);
+        if (selected) selected = itemAt(built, panelLine);   // the same line may be another item now
+        showPage(built, keep === true, playing).build = builds + 1;
         $('warnings').hidden = !built.warnings.length;
         $('warnings').textContent = built.warnings.join('\n');
         const weight = built.html.length + Object.values(built.media).reduce((sum, file) => sum + file.bytes.length * 4 / 3, 0);
@@ -235,19 +283,136 @@
     hint.hidden = !(built && built.present) || hinted;
     $('size').textContent = `${lines} ${lines === 1 ? 'line' : 'lines'}, ${bytes.toLocaleString('en')} bytes, about ${Math.ceil(bytes / 4).toLocaleString('en')} tokens (bytes / 4, estimate)${page}`;
     drawGutter();
+    drawPanel();
     drawPalette();
     lessonProgress();
     document.body.dataset.builds = ++builds;   // lets a test wait for the next build
   }
+  const buildSoon = () => { soon = soon || requestAnimationFrame(() => { soon = 0; build(true); }); };   // at most once a frame
   source.addEventListener('input', () => {
     drawGutter();
+    drawPanel();
     clearTimeout(timer);
     timer = setTimeout(build, 300);   // build once typing stops
+  });
+  // Rewrite one line of the source. quiet: do not build yet (a drag in the preview builds when it ends).
+  function editLine(index, change, quiet) {
+    const lines = source.value.split('\n'), next = change(lines[index] || ''), top = source.scrollTop;
+    if (next === lines[index]) return;
+    lines[index] = next;
+    source.value = lines.join('\n');
+    source.scrollTop = top;
+    drawGutter();
+    drawPanel();
+    if (!quiet) buildSoon();
+  }
+
+  // ---------- the line in hand: where the cursor is, or the item selected in the preview ----------
+  function followCaret() {
+    const line = lineOf(caretAt = caret());
+    if (line === panelLine && !selected) return;
+    panelLine = line;
+    selected = itemAt(built, line);
+    if (front.contentWindow) front.contentWindow.postMessage({ orbSelect: selected }, '*');
+    drawPanel();
+    placeBands();
+  }
+  // The caret moved in the editor, or the editor was clicked: the panel goes back to the caret's line.
+  document.addEventListener('selectionchange', () => { if (document.activeElement === source && caret() !== caretAt) followCaret(); });
+  source.addEventListener('focus', () => setTimeout(followCaret));   // once the click has placed the caret
+  function pickedInPreview(id) {
+    selected = id;
+    panelLine = id ? shown.page.map.ids[id] - 1 : lineOf(caretAt);
+    drawPanel();
+    placeBands();
+    reveal(panelLine);
+  }
+  // A handle moved: the item's new box goes into its line. The page is rebuilt when the drag ends.
+  function boxFromPreview(data) {
+    editLine(shown.page.map.ids[data.item] - 1, line => OrbEdit.set(line, 'box', data.box.join(',')), true);
+    if (data.done) build(true, data.resume);
+  }
+
+  // ---------- properties panel: a control for each option the word on that line takes ----------
+  const widen = hex => hex.length < 7 ? '#' + [...hex.slice(1)].map(c => c + c).join('') : hex;   // #rgb(a) -> #rrggbb(aa)
+  const accepts = {};   // "does the compiler take this option on this word?", asked once
+  const sample = spec => spec.probe || { colour: '#ff0000', box: '10,10,100,100', colours: '#ff0000,#00ff00' }[spec.kind]
+    || (spec.kind === 'menu' ? spec.choices.find(Boolean) : spec.kind === 'words' ? spec.unset || 'x' : String(spec.unset === '' ? Math.max(spec.min, 1) : spec.unset));
+  function accepted(lines, parsed, spec, scenes) {
+    const key = `${scenes}/${parsed.word}/${spec.name}`;
+    if (parsed.tokens.some(token => token.name === spec.name)) return true;
+    if (!(key in accepts) && built) {   // with an error in the file nothing can be asked: show the control for now
+      const probe = lines.slice();
+      probe[panelLine] = OrbEdit.set(lines[panelLine], spec.name, sample(spec));
+      try { Orb.check(probe.join('\n')); accepts[key] = true; } catch { accepts[key] = false; }
+    }
+    return accepts[key] !== false;
+  }
+  function field(spec) {
+    const el = document.createElement('div'), label = el.appendChild(document.createElement('span')), name = spec.kind === 'quoted' ? 'text' : spec.name;
+    const control = (tag, more) => { const made = Object.assign(el.appendChild(document.createElement(tag)), more); made.setAttribute('aria-label', name); return made; };
+    el.className = spec.kind === 'quoted' ? 'field wide' : 'field';
+    el.dataset.name = name;
+    el.spec = spec;
+    label.textContent = name;
+    if (spec.kind === 'menu') control('select').append(...spec.choices.map(choice => new Option(choice || 'none', choice)));
+    else if (spec.kind === 'box') for (const part of ['x', 'y', 'width', 'height']) control('input', { type: 'number', title: part });
+    else if (spec.kind === 'slider') { control('input', { type: 'range', min: spec.min, max: spec.max, step: spec.step }); el.appendChild(document.createElement('output')); }
+    else if (spec.kind === 'number') control('input', { type: 'number', min: spec.min, max: spec.max, step: spec.step, placeholder: String(spec.unset) || 'auto' });
+    else if (spec.kind !== 'colours') control('input', { type: spec.kind === 'colour' ? 'color' : 'text' });
+    if (spec.kind !== 'quoted') Object.assign(el.appendChild(document.createElement('button')), { type: 'button', className: 'clear', textContent: 'x', title: `Remove ${name}` });
+    return el;
+  }
+  // Show a line's value in a control. A control the visitor is using is left alone.
+  function fill(el, line) {
+    const spec = el.spec, parsed = OrbEdit.parse(line), value = spec.kind === 'quoted' ? OrbEdit.text(line) : OrbEdit.get(line, spec.name);
+    const item = built && built.map && built.map.items.find(each => each.line === panelLine + 1);
+    let shows = value === undefined ? String(spec.unset) : value;
+    el.classList.toggle('unset', value === undefined);
+    if (el.contains(document.activeElement)) return;
+    if (spec.kind === 'colours') {   // one picker for each bar or point (a bare number), or each slice of a donut (name=number)
+      const options = new Set(OrbEdit.controls(parsed.word, true).map(each => each.name)), number = text => /^-?[\d.]+$/.test(text);
+      const count = parsed.tokens.slice(1).filter(token => token.name ? parsed.word === 'donut' && !options.has(token.name) && number(token.value) : number(token.text)).length;
+      if (el.querySelectorAll('input').length !== count) {
+        for (const old of el.querySelectorAll('input')) old.remove();
+        for (let i = 0; i < count; i++) el.insertBefore(Object.assign(document.createElement('input'), { type: 'color', title: `colour ${i + 1}` }), el.lastChild);
+      }
+    }
+    const inputs = [...el.querySelectorAll('input, select')];
+    if (spec.kind === 'box') { if (value === undefined && item) shows = item.box.map(Math.round).join(','); inputs.forEach((input, i) => { input.value = shows.split(',')[i] || ''; }); }
+    else if (spec.kind === 'colours') inputs.forEach((input, i) => { input.value = widen(shows.split(',')[i] || '#6ea8ff').slice(0, 7); });
+    else if (spec.kind === 'colour') inputs[0].value = /^#[0-9a-f]{3,8}$/i.test(shows) ? widen(shows).slice(0, 7).toLowerCase() : spec.unset;
+    else if (spec.kind === 'menu') { if (![...inputs[0].options].some(each => each.value === shows)) inputs[0].add(new Option(shows, shows)); inputs[0].value = shows; }
+    else if (spec.kind === 'number') inputs[0].value = value === undefined || isNaN(value) ? '' : value;
+    else inputs[0].value = shows;
+    if (spec.kind === 'slider') el.querySelector('output').textContent = shows;
+  }
+  function drawPanel() {
+    const lines = source.value.split('\n'), line = lines[panelLine], parsed = line === undefined ? null : OrbEdit.parse(line);
+    panel.hidden = !parsed || !parsed.word;
+    if (panel.hidden) return;
+    const scenes = Orb.isPlayer(source.value), key = `${panelLine}|${scenes}|${parsed.word}|${OrbEdit.text(line) === undefined}`;
+    if (key !== panel.dataset.key || !panel.contains(document.activeElement)) {   // the controls stay put while one of them is in use
+      const specs = OrbEdit.controls(parsed.word, scenes, Orb.fonts).filter(spec => accepted(lines, parsed, spec, scenes));
+      panel.dataset.key = key;
+      $('panel-word').textContent = parsed.word;
+      $('panel-where').textContent = `line ${panelLine + 1}${specs.length || OrbEdit.text(line) !== undefined ? '' : ': no controls for this word, edit it in the source'}`;
+      fields.replaceChildren(...(OrbEdit.text(line) === undefined ? [] : [field({ name: '', kind: 'quoted' })]), ...specs.map(field));
+    }
+    for (const el of fields.children) fill(el, line);
+  }
+  fields.addEventListener('input', event => {
+    const el = event.target.closest('.field'), spec = el.spec, inputs = [...el.querySelectorAll('input, select')];
+    const value = spec.kind === 'box' ? inputs.map(input => Math.round(Number(input.value) || 0)).join(',') : spec.kind === 'colours' ? inputs.map(input => input.value).join(',') : inputs[0].value;
+    if (spec.kind === 'slider') el.querySelector('output').textContent = value;
+    editLine(panelLine, line => spec.kind === 'quoted' ? OrbEdit.setText(line, value) : value === '' ? OrbEdit.remove(line, spec.name) : OrbEdit.set(line, spec.name, value));
+  });
+  fields.addEventListener('click', event => {
+    if (event.target.className === 'clear') editLine(panelLine, line => OrbEdit.remove(line, event.target.closest('.field').spec.name));
   });
 
   // ---------- colours: one swatch per colour in the source ----------
   const HEX = /(?<![\w&])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])/gi;
-  const widen = hex => hex.length < 7 ? '#' + [...hex.slice(1)].map(c => c + c).join('') : hex;   // #rgb(a) -> #rrggbb(aa)
   let picking = false, picked = null, frame = 0;   // the swatches are left alone while a colour is being dragged
   function drawPalette() {
     if (!picking) {
@@ -327,25 +492,29 @@
     await store(name, file);
     build(true);
   }
-  // A new item must not split a block, so it goes after the block the cursor is in. Items live under the motion
-  // line (2 spaces); in a file with scenes they live inside a scene (4 spaces).
-  function insertItem(item) {
-    const player = Orb.isPlayer(source.value), indent = player ? 4 : 2, lines = source.value.split('\n');
-    const first = lines.findIndex(line => player ? /^ {2}scene(\s|$)/.test(line) : /^motion(\s|$)/.test(line)) + 1;
-    let at = Math.max(first, source.value.slice(0, source.selectionStart).split('\n').length);
+  // New lines must not split a block, so they go after the block the cursor is in. indent 2: under the motion
+  // line (an item of a video file, or a whole scene); indent 4: inside a scene. A line of `items` that starts
+  // with spaces goes under the one before it.
+  function insertLines(items, indent) {
+    const lines = source.value.split('\n');
+    const first = lines.findIndex(line => indent === 4 ? /^ {2}scene(\s|$)/.test(line) : /^motion(\s|$)/.test(line)) + 1;
+    let at = Math.max(first, lineOf(caretAt) + 1);
     while (at < lines.length && (!lines[at].trim() || lines[at].match(/^ */)[0].length > indent)) at++;
     while (at > first && !lines[at - 1].trim()) at--;
-    lines.splice(at, 0, ' '.repeat(indent) + item);
+    lines.splice(at, 0, ...items.map(item => ' '.repeat(indent) + item));
     source.value = lines.join('\n');
     selectLine(at, true);
+    panelLine = at;
     build();
   }
   async function add(file) {
-    const kind = kindOf(file.name), player = Orb.isPlayer(source.value), name = file.name.replace(/[^\w.-]+/g, '-');
-    if (kind !== 'image' && kind !== 'video') return showProblem({ message: 'Add image or video takes a png, jpg, svg, webp, mp4 or webm file.' }, true);
-    if (kind === 'video' && player) return showProblem({ message: 'Scenes take images only. A video goes in a video file, one without scene lines: try the sample "Swap the image and the colours".' }, true);
+    const kind = kindOf(file.name), name = file.name.replace(/[^\w.-]+/g, '-');
+    if (kind !== 'image' && kind !== 'video') return showProblem({ message: 'Image or video takes a png, jpg, svg, webp, mp4 or webm file.' }, true);
+    if (!source.value.trim()) source.value = OrbEdit.STARTER[kind === 'video' ? 'video' : 'scenes'].join('\n');
+    const scenes = Orb.isPlayer(source.value);
+    if (kind === 'video' && scenes) return showProblem({ message: 'Scenes take images only. A video goes in a video file, one without scene lines: try the sample "Swap the image and the colours".' }, true);
     await store(name, file);
-    insertItem(kind === 'video' ? `video "${name}" at=0 box=200,200,800,450 fit=cover sound=off` : player ? `image image=${name}` : `image "${name}" at=0 box=200,200,600,400`);
+    insertLines([kind === 'video' ? `video "${name}" at=0 box=200,200,800,450 fit=cover sound=off` : scenes ? `image image=${name}` : `image "${name}" at=0 box=200,200,600,400`], scenes ? 4 : 2);
   }
   // A file dropped on the page replaces the first picture (or video) of the source, or is added when there is none.
   function dropped(file) {
@@ -361,13 +530,27 @@
     chosen = null;
     if (file) then(file);
   };
-  $('add-media').onclick = () => pick(`${ACCEPT.image},${ACCEPT.video}`, add);
   chips.addEventListener('click', event => {
     const chip = event.target.closest('.chip');
     if (chip) pick(ACCEPT[chip.dataset.kind], file => replace(chip.dataset.name, file));
   });
   addEventListener('dragover', event => event.preventDefault());
   addEventListener('drop', event => { event.preventDefault(); if (event.dataTransfer.files[0]) dropped(event.dataTransfer.files[0]); });
+
+  // ---------- Add: ready lines, so nobody starts from a blank one ----------
+  const adder = $('add');
+  for (const [i, entry] of OrbEdit.ADD.entries()) adder.add(new Option(entry.title, i));
+  adder.onchange = () => {
+    const entry = OrbEdit.ADD[adder.value];
+    adder.value = '';
+    if (!entry) return;
+    if (entry.file) return pick(`${ACCEPT.image},${ACCEPT.video}`, add);
+    if (!source.value.trim()) { source.value = OrbEdit.STARTER.scenes.slice(0, entry.block ? 1 : 2).join('\n'); caretAt = source.value.length; }
+    const scenes = Orb.isPlayer(source.value) || /^motion\b[^\n]*$/.test(source.value.trim()) && !!entry.block, make = scenes ? entry.scenes : entry.video;
+    if (!make) return showProblem({ message: `${entry.title} needs a file with scenes. Pick a sample that has scene lines, or empty the editor and add it again.` }, true);
+    if (!scenes && entry.needs && !source.value.includes(entry.needs)) { source.value = `${entry.needs}\n${source.value}`; caretAt += entry.needs.length + 1; }
+    insertLines(make(built ? built.width : 1920, built ? built.height : 1080), entry.block || !scenes ? 2 : 4);
+  };
 
   // ---------- export: the result as one file, media inside ----------
   // Downloads are named after the title on the motion line.
@@ -384,22 +567,6 @@
   };
 
   // ---------- record video: this tab, captured in real time and cropped to the preview ----------
-  // This function runs inside the preview while recording. It hides the control bar, waits at 0 and plays once
-  // when told to. A video page keeps its own clock (and its sound); a page with scenes is stepped from here.
-  function recordDriver() {
-    if (typeof window.seek !== 'function') return setTimeout(recordDriver, 50);
-    document.body.classList.add('nocontrols');
-    dispatchEvent(new Event('resize'));
-    window.pause();
-    window.seek(0);
-    addEventListener('message', event => {
-      if (event.data !== 'orb-record-go') return;
-      if (typeof window.play === 'function') return window.play();   // a page with scenes has no play(), only a Play button
-      const start = performance.now();
-      (function step() { window.seek((performance.now() - start) / 1000); requestAnimationFrame(step); })();
-    });
-    parent.postMessage('orb-record-ready', '*');
-  }
   const recordStatus = $('record-status');
   $('record').onclick = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !window.MediaRecorder) {
@@ -447,7 +614,7 @@
     if (!stopRecording) return;   // cancelled while the crop was being set
     recordStatus.textContent = 'Recording starts' + whole;
 
-    // The preview loads the same page plus the driver above, says when it waits at 0, and plays on "go".
+    // The preview loads the same page plus orbRecordDriver(), says when it waits at 0, and plays on "go".
     function ready(event) {
       if (event.source !== front.contentWindow || event.data !== 'orb-record-ready') return;
       removeEventListener('message', ready);
@@ -463,19 +630,22 @@
     addEventListener('message', ready);
     if (loading) clearTimeout(loading.timer);
     loading = queued = null;
-    shown = { id: ++jobs, page: piece, from: null };
-    front.srcdoc = `${framed(shown)}<script>${recordDriver}recordDriver();</script>`;
+    shown = { id: ++jobs, page: piece, from: null, edit: { ids: [], select: null } };   // nothing is selected in a recording
+    front.srcdoc = `${framed(shown)}<script>${orbRecordDriver}orbRecordDriver();</script>`;
   };
 
   // ---------- samples ----------
   for (const [i, sample] of Orb.samples.entries()) samples.add(new Option(sample.title, i));
   function load(text) {
     hinted = false;
+    selected = null;
+    caretAt = panelLine = 0;
     source.value = text;
-    source.scrollTop = 0;
+    source.scrollTop = source.scrollLeft = 0;
     show('source');
     build();
   }
+  const openSamples = () => { samples.focus(); try { samples.showPicker(); } catch { /* the menu has the focus; the visitor opens it */ } };
   samples.onchange = () => {
     if (!Orb.samples[samples.value]) return;
     closeLesson();
@@ -498,7 +668,7 @@
     $('lesson-say').innerHTML = lesson ? lesson.say : 'You now know Orb. Open the samples or start from an empty file.';
     $('lesson-count').textContent = lesson ? `Step ${step + 1} of ${lessons.length}` : '';
     $('lesson-back').disabled = step === 0;
-    for (const id of ['lesson-show', 'lesson-next']) $(id).hidden = !lesson;
+    for (const id of ['lesson-show', 'lesson-next', 'lesson-menu', 'lesson-skip']) $(id).hidden = !lesson;
     for (const id of ['lesson-samples', 'lesson-empty']) $(id).hidden = !!lesson;
     if (lesson) load(work[step] ?? lesson.source); else lessonProgress();
   }
@@ -508,6 +678,7 @@
     step = -1;
     $('lesson').hidden = true;
     palette.classList.remove('point');
+    drawGutter();   // the editor has more room now
   }
   // After every build: a step is done once its change is in the source and the source compiles.
   function lessonProgress() {
@@ -524,8 +695,9 @@
     source.value = lesson.done(changed) ? changed : lesson.show(lesson.source);   // from the step's own file when the visitor's has drifted
     build();
   };
-  $('lesson-samples').onclick = () => { samples.focus(); try { samples.showPicker(); } catch { /* the menu has the focus; the visitor opens it */ } };
+  $('lesson-samples').onclick = $('lesson-menu').onclick = openSamples;
   $('lesson-empty').onclick = () => { closeLesson(); load(''); source.focus(); };
+  $('lesson-skip').onclick = () => { closeLesson(); source.focus(); };   // the file of the step stays in the editor
 
   // ---------- start: a shared link opens its file, anything else opens the tutorial ----------
   function start() {

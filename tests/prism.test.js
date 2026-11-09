@@ -101,7 +101,11 @@ test('icon= is a built-in glyph on cards but a file on diagram nodes', () => {
 
 test('every example compiles', () => {
   const fs = require('fs'), path = require('path');
-  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.prism') ? [path.join(d, e.name)] : []);
-  for (const f of walk(path.join(__dirname, '..', 'examples'))) assert.doesNotThrow(() => compile(fs.readFileSync(f, 'utf8'), { baseDir: path.dirname(f) }), f);
+  // .prism files, and .orb files that hold scenes (the other .orb files are videos, built by the video compiler)
+  const isPlayer = f => f.endsWith('.prism') || (f.endsWith('.orb') && /^ {2}scene(\s|$)/m.test(fs.readFileSync(f, 'utf8')));
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : isPlayer(path.join(d, e.name)) ? [path.join(d, e.name)] : []);
+  const files = walk(path.join(__dirname, '..', 'examples'));
+  assert.ok(files.some(f => f.endsWith(path.join('decks', 'showcase.orb'))));
+  for (const f of files) assert.doesNotThrow(() => compile(fs.readFileSync(f, 'utf8'), { baseDir: path.dirname(f) }), f);
 });
 

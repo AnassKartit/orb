@@ -193,4 +193,4 @@ function cli(args) {
   console.log(`wrote ${dest} (${(html.length / 1024).toFixed(1)} KB, plays in any browser)`);
 }
 
-module.exports = { page, read, build, cli, isPlayer, mime, scopeCss, webFonts };
+module.exports = { page, read, build, cli, isPlayer, mime, scopeCss, webFonts, WEB_FONTS };

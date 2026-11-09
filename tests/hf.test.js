@@ -530,3 +530,12 @@ test('clip reveals never trim ink: the open state reaches beyond the box on ever
   assert.doesNotMatch(html,/inset\(0 0 0 0\)/);assert.doesNotMatch(html,/inset\(0 100% 0 0\)/);
   assert.match(html,/inset\(-50% -50% -50% -50%\)/);assert.match(html,/inset\(-50% 100% -50% -50%\)/);
 });
+
+test('type works with emphasis: emphasized characters keep their colour', t => {
+  const f = fixture(t);
+  build('motion "T" 16:9 3s\n  text "Small *Big*{color=#00ff00} and *Wins*" at=0 box=160,360,1600,140 emph=#38BDF8\n    type at=0 dur=1\n', f.out, f);
+  const html = fs.readFileSync(path.join(f.out, 'index.html'), 'utf8');
+  assert.match(html, /char-6" style="display:none;color:#00ff00">B/);
+  assert.match(html, /style="display:none;color:#38BDF8">W/);
+  assert.doesNotMatch(html.replace(/<script[\s\S]*?<\/script>/g, ''), /\*Big\*|\*Wins\*/);
+});

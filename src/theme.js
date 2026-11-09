@@ -81,6 +81,13 @@ function categorical(h, mode, bg) {
            ok: best.minC >= 8 && best.minN >= 15 && best.minContrast >= 3 };
 }
 
+// The lightest colour of a hue that white text still reads on (contrast 5 or more). Slide header bands use it.
+function carriesWhite(C, h) {
+  for (let L = 0.6; L > 0.2; L -= 0.02) { const c = oklch(L, C, h); if (contrast(c, '#ffffff') >= 5) return c; }
+  return oklch(0.2, C, h);
+}
+const rule = (selector, vars) => selector + '{' + Object.entries(vars).map(([k, v]) => `${k}:${v}`).join(';') + '}';
+
 function makeTheme(accentHex, mode = 'dark') {
   const h = hueOf(accentHex), dark = mode !== 'light';
   const hl = Math.abs(((h - 75 + 540) % 360) - 180) < 50 ? 205 : 75;   // 75 = amber
@@ -98,10 +105,46 @@ function makeTheme(accentHex, mode = 'dark') {
     '--good1': oklch(dark ? 0.76 : 0.6, 0.17, 150), '--good2': oklch(dark ? 0.6 : 0.5, 0.17, 150),
     '--bad1': oklch(dark ? 0.7 : 0.6, 0.19, 25), '--bad2': oklch(dark ? 0.55 : 0.5, 0.2, 25),
     '--vio': oklch(dark ? 0.45 : 0.8, 0.17, (h + 40) % 360), '--blob-o': dark ? '0.55' : '0.30',
+    // slide header bands: the accent and a neighbouring hue, both dark enough for white text in either mode
+    '--band1': carriesWhite(0.15, h), '--band2': carriesWhite(0.16, (h + 40) % 360),
   };
   cat.colors.forEach((c, i) => { vars['--d' + (i + 1)] = c; });
-  const css = ':root,body{' + Object.entries(vars).map(([k, v]) => `${k}:${v}`).join(';') + '}';
-  return { vars, css, report: { minNormal: cat.minNormal, minCvd: cat.minCvd, minContrast: cat.minContrast, ok: cat.ok } };
+  return { vars, css: rule(':root,body', vars), report: { minNormal: cat.minNormal, minCvd: cat.minCvd, minContrast: cat.minContrast, ok: cat.ok } };
 }
 
-module.exports = { makeTheme, hueOf, contrast, dE, hexToOklab, simulate, CVD };
+// Ready looks for slide decks, as data: a starting accent and mode, a backdrop, and values for the slide
+// variables that src/template.html declares. Colours are written against the palette (--fg, --c1 ...), so a
+// look keeps working when accent= or mode= replaces its own. The backdrop is used while the mode is the look's.
+const LOOKS = {
+  midnight: {   // dark navy, glass cards
+    accent: '#6ea8ff', mode: 'dark', bg: ['#0a1026', '#16214a'],
+    vars: {
+      '--card': 'color-mix(in srgb, var(--fg) 8%, transparent)', '--line': 'color-mix(in srgb, var(--fg) 20%, transparent)',
+      '--blur': 'blur(14px)', '--glow': '0 16px 36px rgba(0,0,0,.28)', '--blob-o': '0.7',
+    },
+  },
+  paper: {      // warm light, serif headings
+    accent: '#b4532a', mode: 'light', bg: ['#faf6ec', '#f2e9d8'],
+    vars: {
+      '--head-font': '"Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif',
+      '--line': 'color-mix(in srgb, var(--fg) 18%, transparent)', '--edge': 'linear-gradient(var(--line),var(--line))',
+      '--band': 'linear-gradient(var(--band1),var(--band1))', '--ring-edge': 'conic-gradient(var(--c3),var(--c2),var(--c3))', '--blob-o': '0',
+    },
+  },
+  neon: {       // near black, glowing accent borders
+    accent: '#19e6b8', mode: 'dark', bg: ['#050509', '#0c0c16'],
+    vars: {
+      '--panel': 'color-mix(in srgb, var(--fg) 3%, var(--bg1))', '--card': 'color-mix(in srgb, var(--fg) 5%, var(--bg1))',
+      '--line': 'var(--c1)', '--edge': 'linear-gradient(135deg,var(--c1),var(--c5))',
+      '--glow': '0 0 18px color-mix(in srgb, var(--c1) 50%, transparent)', '--blob-o': '0.25',
+    },
+  },
+};
+// A look as CSS. [data-mode] is on the page and on every slide that has its own mode, so the variables are
+// worked out again wherever the palette changes.
+function lookCss(name, mode) {
+  const look = LOOKS[name];
+  return (mode === look.mode ? rule(':root,body', { '--bg1': look.bg[0], '--bg2': look.bg[1] }) : '') + rule('[data-mode]', look.vars);
+}
+
+module.exports = { makeTheme, LOOKS, lookCss, rule, luminance, hueOf, contrast, dE, hexToOklab, simulate, CVD };

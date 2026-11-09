@@ -686,7 +686,8 @@ function build(source, outDir, options = {}) {
     return result+esc(source.slice(cursor));
   }
   function textContent(n) {
-    if(/<\/?(?:br|b|small)\b|\[img\s|\*[^*]*\*\{/.test(n.args[0])) {
+    const typed = n.animations.some(a=>a.kind==='type'), markup = /<\/?(?:br|b|small)\b|\[img\s/.test(n.args[0]);
+    if(markup || (!typed && /\*[^*]*\*\{/.test(n.args[0]))) {   // typed text handles *x*{color=} itself
       if(n.o.words || n.animations.some(a=>['karaoke','type'].includes(a.kind))) fail(n.line,'rich text cannot combine with word highlights or type');
       let gap='';
       return richText(String(binding(n.args[0],'text').value),n).split(/(<[^>]+>)/).map(part=>{
@@ -716,12 +717,22 @@ function build(source, outDir, options = {}) {
     if (hot) fail(n.line, 'unclosed inline emphasis');
     n.wordCount = word;
     if (n.animations.some(a=>a.kind === 'type')) {
-      if (timedWords || n.args[0].includes('*') || n.args[0].includes('{$')) fail(n.line, 'type cannot combine with word highlights, emphasis or text bindings');
+      if (timedWords || n.args[0].includes('{$')) fail(n.line, 'type cannot combine with word highlights or text bindings');
       const types = n.animations.filter(a=>a.kind === 'type');
       if (types.length !== 1 || String(types[0].o.at ?? 0).includes(',')) fail(n.line,'type needs one start per text item');
-      const chars = Array.from(n.args[0]); n.charCount = chars.length;
+      // Emphasis types too: *word* takes the emph colour, *word*{color=#hex} its own colour; each character keeps its segment colour.
+      const segs = []; let rest = n.args[0], mm;
+      const re = /\*([^*]+)\*(?:\{([^}]*)\})?/g; let last = 0;
+      while ((mm = re.exec(rest))) {
+        if (mm.index > last) segs.push({ t: rest.slice(last, mm.index), c: null });
+        const own = (mm[2] || '').match(/color=(#[0-9a-fA-F]{3,8}|[a-z]+)/);
+        segs.push({ t: mm[1], c: own ? own[1] : (n.o.emph || '#ffe600') }); last = re.lastIndex;
+      }
+      if (last < rest.length) segs.push({ t: rest.slice(last), c: null });
+      if (segs.some(sg => sg.t.includes('*'))) fail(n.line, 'unclosed inline emphasis');
+      const chars = segs.flatMap(sg => Array.from(sg.t).map(ch => [ch, sg.c])); n.charCount = chars.length;
       const cursor = n.animations.find(a=>a.kind === 'type').o.cursor;
-      return chars.map((c,i)=>`<span id="${n.id}-char-${i}" style="display:none">${esc(c)}</span>`).join('') + (cursor ? `<span id="${n.id}-cursor" style="display:inline-block;width:.55em;height:1em;margin-left:.12em;vertical-align:-.14em;background:${esc(css(cursor))}"></span>` : '');
+      return chars.map(([c,col],i)=>`<span id="${n.id}-char-${i}" style="display:none${col?';color:'+esc(col):''}">${esc(c)}</span>`).join('') + (cursor ? `<span id="${n.id}-cursor" style="display:inline-block;width:.55em;height:1em;margin-left:.12em;vertical-align:-.14em;background:${esc(css(cursor))}"></span>` : '');
     }
     return text;
   }

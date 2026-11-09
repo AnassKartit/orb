@@ -16,7 +16,7 @@ A few readable lines in. A video, a deck or an interactive page out.</p>
 
 <p align="center">
   <img alt="20x fewer tokens than GSAP on six briefs" src="https://img.shields.io/badge/tokens-20x%20fewer%20than%20GSAP-22c55e">
-  <img alt="134 tests passing" src="https://img.shields.io/badge/tests-134%20passing-22c55e">
+  <img alt="tests passing" src="https://img.shields.io/badge/tests-passing-22c55e">
   <img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue">
 </p>
 
@@ -41,6 +41,29 @@ Change `accent=`, add `font=display` or `mode=light`, and the whole design follo
 
 Animated charts and counters, kinetic captions, click-through decks, characters with moods and state machines
 that react to hover and click, and full videos with footage, voice-anchored timing and captions.
+
+## Make it yours
+
+Every element takes the same look and place options, so nothing is stuck with a default:
+
+```
+motion "Make it yours" 1280x720 accent=#7c5cff mode=dark
+  scene 5s
+    title "Move it, turn it, restyle it" font=serif size=72 color=#ffffff rotate=-2
+    count "Orders this week" 1284 color=#ffd166 font=mono
+    bars 12 18 15 22 30 labels=Mon,Tue,Wed,Thu,Fri colors=#ff6b6b,#ffd166,#06d6a0,#4cc9f0,#b388ff tag="NEW RECORD" tag-at=Fri
+```
+
+- **Any element:** `color font size weight align x y w h rotate opacity bg pad radius border shadow`.
+- **Charts:** a colour per bar or slice, tags, label and value sizes, grid, line stroke and fill, donut hole.
+- **Images:** `w h fit radius border shadow`.
+- **Decks:** `look=midnight|paper|neon`, a background per slide (colour, gradient or picture), slide transitions
+  (`fade slide zoom wipe`) and builds on every part.
+- **Characters:** `mascot "Hoot" kind=owl|robot|fox|cat`, one rig, every act and mood on each.
+
+A misspelt option is an error that names the closest one and lists what that element takes. In the
+[playground](https://www.kartit.net/orb/) you can also click an item in the preview, drag it to move or resize it,
+and change its colour, size and font in a panel; the source line is rewritten as you go.
 
 ## Why
 
@@ -68,7 +91,8 @@ What that number does and does not mean:
   every position and size to rebuild an existing video exactly, the saving measured on two real videos was
   4.5x and 5.8x fewer tokens than the HTML they replace.
 - A model reads the two cheat sheets ([`docs/SPEC.md`](docs/SPEC.md), [`docs/SPEC-HF.md`](docs/SPEC-HF.md),
-  3,188 tokens together) once per session as input.
+  4,428 tokens together) once per session as input. Counted once against these six briefs, Orb is 5,454 tokens
+  against 20,684 for GSAP, 3.8x.
 - Six briefs is a small test. In a blind quality comparison on those briefs Orb scored 4.10 out of 5 and GSAP
   3.47; treat that as "no measurable quality loss", not as a win.
 
@@ -155,7 +179,8 @@ mapped back to Orb line numbers.
 
 ## Status
 
-Beta. Working today: both kinds of file, components, modules, the standard library, the playground, the web
+Beta. Working today: both kinds of file, components, modules, the standard library, look and place options on
+every element, deck looks and transitions, four character kinds, the playground with direct editing, the web
 target, the MCP server. Not built yet, and the next steps: one typed parser and intermediate form shared by
 both kinds of file, restyling parts of a component with selectors, tests for video (`expect`), state machines
 on any element, a plugin interface, and a PowerPoint target.

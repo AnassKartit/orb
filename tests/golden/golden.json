@@ -1,17 +1,17 @@
 {
- "examples/cartoon/bench.prism": "bf93d0f413a9647b",
- "examples/cartoon/mascot.prism": "86e464e5b063edcd",
- "examples/cartoon/sheet.prism": "e43222f41762e597",
- "examples/cartoon/talk.prism": "0fb9dfa9bd4180c3",
- "examples/interactive/hoot.prism": "913c42722b7ad5cd",
- "examples/launch.prism": "3738bdd8014ab172",
- "examples/q4.prism": "3bed4d56aa095c13",
+ "examples/cartoon/bench.prism": "ed6b819552149d40",
+ "examples/cartoon/mascot.prism": "1401d40a43355573",
+ "examples/cartoon/sheet.prism": "14115368d1ae97de",
+ "examples/cartoon/talk.prism": "b53f1d6f90b871e8",
+ "examples/interactive/hoot.prism": "6b9ce2ee4d20aa5e",
+ "examples/launch.prism": "380c8c51e1fb1faa",
+ "examples/q4.prism": "a3915280d6c202a4",
  "examples/hf/all.orb": {
   "files": {
    "assets/H-card.svg": "asset",
-   "assets/H-sample.mp4": "asset",
    "assets/H-words.json": "asset",
    "assets/H-tone.wav": "asset",
+   "assets/H-sample.mp4": "asset",
    "compositions/captions-7.html": "428eb61d90fd1ffb",
    "compositions/mounted.html": "d1bf955289b5a115",
    "compositions/panel.html": "d6b182856852ab3d",
@@ -156,8 +156,8 @@
  },
  "examples/hf/hardening-voice.orb": {
   "files": {
-   "assets/H-hardening.words.json": "asset",
    "assets/H-ping.wav": "asset",
+   "assets/H-hardening.words.json": "asset",
    "compositions/captions-3.html": "35cc85550ed31e6d",
    "hyperframes.json": "890586bab119c1c8",
    "index.html": "25c61b04a92d7e27",
@@ -167,10 +167,10 @@
  },
  "examples/hf/hardening.orb": {
   "files": {
-   "assets/H-pop.wav": "asset",
    "assets/H-click.wav": "asset",
    "assets/H-whoosh.wav": "asset",
    "assets/H-ping.wav": "asset",
+   "assets/H-pop.wav": "asset",
    "hyperframes.json": "59be1feef1d2aeba",
    "index.html": "d349fd3b4b4433a1",
    "orb-map.json": "b326fe0f1ec41f72"

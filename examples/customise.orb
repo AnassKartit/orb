@@ -1,0 +1,16 @@
+# Every element takes the same options: colour, font, size, place and box. Charts and images add a few of their own.
+motion "Make it yours" 1280x720 accent=#7c5cff mode=dark
+  scene 4s align=left
+    eyebrow "ONE SET OF OPTIONS" color=#ffd166 spacing=.4em
+    title "Move it, turn it, restyle it" font=serif size=72 color=#ffffff align=right x=-40 rotate=-2
+    text "The same words work on every element." size=1.2x opacity=.85 bg=#ffffff1f pad=14 radius=12
+  scene 5s
+    count "Orders this week" 1284 color=#ffd166 font=mono size=.8x
+    bars 12 18 15 22 30 labels=Mon,Tue,Wed,Thu,Fri colors=#ff6b6b,#ffd166,#06d6a0,#4cc9f0,#b388ff tag="NEW RECORD" tag-at=Fri value-color=#ffffff label-size=22 gap=28 radius=4 grid=on h=240
+  scene 5s
+    line 3 5 4 8 7 12 labels=Jan,Feb,Mar,Apr,May,Jun stroke=#06d6a0 dots=off title="GROWTH"
+    donut web=52 app=31 api=17 colors=#ffd166,#06d6a0,#4cc9f0 hole=.45
+  scene 4s valign=center
+    heading "A picture, sized and framed" align=center font=rounded
+    image image=decks/assets/dusk.jpg w=520 h=300 fit=cover radius=24 border=#ffd166 shadow=on rotate=3 align=center
+    note "w, h, fit, radius, border, shadow and rotate" align=center color=#ffd166

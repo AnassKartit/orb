@@ -24,6 +24,7 @@
   };
   const stage = document.getElementById('stage');
   document.body.dataset.theme = M.theme;
+  document.body.dataset.mode = M.mode;                   // dark or light: the slide colours in the page styles follow it
   stage.style.width = M.w + 'px';
   stage.style.height = M.h + 'px';
 
@@ -36,6 +37,11 @@
   };
   const chartBox = (host, el) => { const box = h('div', 'el chartbox', host); if (el.named.title) h('div', 'caption', box).textContent = el.named.title; return box; };
   const color = (i) => `var(--d${(i % 5) + 1})`;
+  // chart options: a number with a default, a length that may be a share of the stage, a colour list that cycles
+  const num = (v, fallback) => (v === undefined ? fallback : parseFloat(v));
+  const extent = (v, fallback, full) => (v === undefined ? fallback : /%$/.test(v) ? full * parseFloat(v) / 100 : parseFloat(v));
+  const cycle = v => { const list = v ? v.split(',') : null; return i => list && list[i % list.length]; };
+  const faint = 'stroke:color-mix(in srgb, var(--fg) 12%, transparent)';
 
   // Drifting background light, a function of time like everything else.
   const blobs = [0, 1, 2].map(i => {
@@ -64,8 +70,27 @@
       case 'slide-l': node.style.opacity = e; node.style.transform = `translateX(${(1 - e) * -120}px)`; break;
       case 'slide-r': node.style.opacity = e; node.style.transform = `translateX(${(1 - e) * 120}px)`; break;
       case 'blur': node.style.opacity = e; node.style.filter = `blur(${(1 - e) * 18}px)`; break;
+      case 'grow': node.style.opacity = clamp(p * 3); node.style.transformOrigin = '50% 0'; node.style.transform = `scaleY(${e})`; break;
       default: node.style.opacity = p > 0 ? 1 : 0;
     }
+  }
+  // in=type on a slide component: its words appear letter by letter and the markup (bold, links) stays.
+  function typeIn(item, raw) {
+    if (!item.letters) {
+      item.letters = [];
+      const walk = document.createTreeWalker(item.node, NodeFilter.SHOW_TEXT);
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) item.letters.push([n, n.nodeValue]);
+    }
+    let left = Math.round(raw * item.letters.reduce((sum, [, text]) => sum + text.length, 0));
+    for (const [n, text] of item.letters) { n.nodeValue = text.slice(0, left); left = Math.max(0, left - text.length); }
+    item.node.style.opacity = raw > 0 ? 1 : 0;
+  }
+  // A slide transition is one move seen from two sides: the new slide arrives (side 1) while the one it replaces leaves (side -1).
+  function transit(kind, p, side) {
+    if (kind === 'slide') return { tf: `translateX(${Math.round((side > 0 ? 1 - p : -p) * M.w)}px)` };   // whole pixels keep text sharp on the way
+    if (kind === 'wipe') return { clip: side > 0 ? `inset(0 ${(1 - p) * 100}% 0 0)` : `inset(0 0 0 ${p * 100}%)` };
+    const o = side > 0 ? p : 1 - p;
+    return kind === 'zoom' ? { o, tf: `scale(${side > 0 ? 0.9 + 0.1 * p : 1 + 0.06 * p})` } : { o };
   }
 
   const imgSrc = v => (v && v[0] === '@' ? (M.assets || {})[v.slice(1)] : v) || '';
@@ -89,6 +114,39 @@
     sharepoint: 'M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M9 9h5a2 2 0 0 1 0 4H9.5a2 2 0 0 0 0 4H15',
     purview: 'M12 3l8 5v8l-8 5-8-5V8z M12 8l4 2.5v3L12 16l-4-2.5v-3z',
   };
+  // ---- the options every scene element takes: colour, font, size, place and box. Applied here, once, to the element's
+  // root node; the ones about type also reach the node that holds its words. x, y and rotate use the translate and rotate
+  // properties, so the automatic layout and the entrance moves (which use transform) are left alone.
+  const WORDS = { count: '.num', steps: 'li', hub: '.t', cover: '.tt', divider: '.dt', outcome: '.orow', panel: '.hdr' };   // where an element keeps its main words
+  const CHARTS = ['bars', 'line', 'donut'], SHARES = ['panel', 'grid', 'row', 'col', 'card', 'bullets'], WORDY = ['eyebrow', 'title', 'sub', 'text', 'count', 'heading', 'lede', 'note'];
+  const px = v => (/^-?[\d.]+$/.test(v) ? v + 'px' : v);
+  const SIDE = { left: 'flex-start', center: 'center', right: 'flex-end', top: 'flex-start', bottom: 'flex-end' };
+  function custom(node, el, top) {
+    const n = el.named, st = node.style, chart = CHARTS.includes(el.type);
+    const words = [node, ...(WORDS[el.type] && node.querySelectorAll ? node.querySelectorAll(WORDS[el.type]) : [])];
+    const type = (property, value) => words.forEach(w => { w.style[property] = value; });
+    if (n.color) { type('color', n.color); node.classList.add('inked'); if (chart) { st.setProperty('--fg', n.color); st.setProperty('--muted', n.color); } }
+    if (n.font) st.fontFamily = n.font;
+    if (/x$/.test(n.size || '')) st.zoom = parseFloat(n.size);                      // 1.4x: the whole element, 1.4 times as big
+    else if (/^[\d.]/.test(n.size || '') && !chart && el.type !== 'orb' && el.type !== 'shape') type('fontSize', px(n.size));
+    if (n.weight) type('fontWeight', n.weight);
+    if (n.spacing) type('letterSpacing', px(n.spacing));
+    if (n.upper) type('textTransform', n.upper === 'on' ? 'uppercase' : 'none');
+    if (n.align && el.type !== 'col') {
+      st.textAlign = n.align; if (el.type === 'card') st.alignItems = SIDE[n.align];
+      if (top) { st.alignSelf = SIDE[n.align]; node.parentElement.style.width = '100%'; }   // the block spans the stage, so there is a left and a right to go to
+    }
+    if (n.x || n.y) st.translate = `${px(n.x || '0')} ${px(n.y || '0')}`;
+    if (n.rotate) st.rotate = parseFloat(n.rotate) + 'deg';
+    if (n.w && !chart && (/[%x]$/.test(n.w) || !SHARES.includes(el.type))) { st.width = px(n.w); st.flex = 'none'; }   // in a row a bare number on a share part stays its share
+    if (n.h && !chart) st.height = px(n.h);
+    if (n.bg) st.background = n.bg;
+    if (n.pad) st.padding = px(n.pad);
+    if (n.radius && el.type !== 'bars') st.borderRadius = px(n.radius);
+    if (n.border) st.border = /\s/.test(n.border) ? n.border : `2px solid ${n.border}`;
+    if (n.shadow) st[WORDY.includes(el.type) && !n.bg ? 'textShadow' : 'boxShadow'] = n.shadow === 'on' ? '0 10px 30px rgba(0,0,0,.35)' : n.shadow;   // bare words get a text shadow
+  }
+  const KIT = new Set(['table', 'tabs', 'legend', 'heading', 'lede', 'panel', 'grid', 'row', 'col', 'card', 'steps', 'outcome', 'bullets', 'banner', 'hub', 'cover', 'divider', 'image', 'plus', 'note']);   // slide components
   const disc = (name, host) => {
     const d = h('span', 'disc', host);
     d.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[name] || ICONS.shield}"/></svg>`;
@@ -133,8 +191,8 @@
     bars(el, host) {
       const raw = el.args.filter(a => Number.isFinite(parseFloat(a)));
       const vals = raw.map(parseFloat);
-      const labels = el.named.labels ? el.named.labels.split(',') : null;
-      const W = el.w || 760, H = 300, gap = 18, PT = (el.named.peak || el.named.low) ? 86 : 44, PB = labels ? 38 : 14, n = vals.length;
+      const N = el.named, labels = N.labels && N.labels !== 'off' ? N.labels.split(',') : null;
+      const W = extent(N.w, el.w || 760, M.w), H = extent(N.h, 300, M.h), gap = num(N.gap, 18), PT = (N.peak || N.low || N.tag) ? 86 : 44, PB = labels ? 38 : 14, n = vals.length;
       const bw = (W - gap * (n + 1)) / n, max = Math.max(...vals), useLow = el.named.low !== undefined,
         top = useLow ? vals.indexOf(Math.min(...vals)) : vals.indexOf(max), base = PT + H, tag = useLow ? el.named.low : el.named.peak;
       const svg = s('svg', { viewBox: `0 0 ${W} ${PT + H + PB}`, width: W, height: PT + H + PB }, chartBox(host, el));
@@ -150,21 +208,26 @@
       const glow = s('filter', { id: id + 'f', x: '-30%', y: '-30%', width: '160%', height: '160%' }, defs);
       s('feGaussianBlur', { stdDeviation: 10 }, glow);
       s('line', { x1: gap, x2: W - gap, y1: base, y2: base, stroke: 'rgba(255,255,255,.16)', 'stroke-width': 2 }, svg);
+      if (N.grid === 'on') [0.25, 0.5, 0.75, 1].forEach(f => s('line', { x1: gap, x2: W - gap, y1: base - f * (H - 8), y2: base - f * (H - 8), style: faint, 'stroke-width': 2 }, svg));
       const cx = i => gap + i * (bw + gap) + bw / 2;
+      // a bar's own colour: peak-color or low-color on the marked bar, then colors= in turn, then bar=; none of them: the theme's gradients
+      const listed = cycle(N.colors), own = i => (i === top && N[useLow ? 'low-color' : 'peak-color']) || listed(i) || N.bar, rx = num(N.radius, 10);
       // cheap glow: layered translucent strokes (no filters, so nothing is re-blurred each frame)
-      const glows = vals.map((v, i) => [[22, 0.07], [12, 0.12]].map(([w, o]) => s('rect', { x: gap + i * (bw + gap), rx: 12, width: bw, fill: 'none', stroke: i === top ? `var(--${tv}1)` : 'var(--c1)', 'stroke-width': w * (i === top ? 1 : 0.6), 'stroke-opacity': o * (i === top ? 1.6 : 1) }, svg)));
+      const glows = vals.map((v, i) => [[22, 0.07], [12, 0.12]].map(([w, o]) => s('rect', { x: gap + i * (bw + gap), rx: rx + 2, width: bw, fill: 'none', stroke: own(i) || (i === top ? `var(--${tv}1)` : 'var(--c1)'), 'stroke-width': w * (i === top ? 1 : 0.6), 'stroke-opacity': o * (i === top ? 1.6 : 1) }, svg)));
       const rects = vals.map((v, i) => {
-        const r = s('rect', { x: gap + i * (bw + gap), rx: 10, width: bw, fill: `url(#${i === top ? id + 'h' : id})`, opacity: i === top ? 1 : 0.85 }, svg);
+        const r = s('rect', { x: gap + i * (bw + gap), rx, width: bw, fill: own(i) || `url(#${i === top ? id + 'h' : id})`, opacity: i === top ? 1 : 0.85 }, svg);
         return r;
       });
       const gloss = vals.map((v, i) => s('rect', { x: gap + i * (bw + gap) + bw * 0.12, rx: 6, width: bw * 0.2, fill: '#fff', opacity: 0.16 }, svg));
       const fmtVal = (r, v) => v >= 1000 ? v.toLocaleString('en-US') : r;
       const txt = (str, attrs) => { const t = s('text', { 'text-anchor': 'middle', ...attrs }, svg); t.textContent = str; return t; };
-      const valTx = vals.map((v, i) => txt(fmtVal(raw[i], v), { x: cx(i), 'font-size': 22, 'font-weight': 700, fill: i === top ? 'var(--fg)' : 'var(--muted)', opacity: 0 }));
-      if (labels) labels.forEach((l, i) => txt(l, { x: cx(i), y: base + 28, 'font-size': 20, fill: 'var(--muted)' }));
-      const pw = tag ? tag.length * 11 + 28 : 0;
-      const pill = tag ? s('rect', { x: cx(top) - pw / 2, width: pw, height: 28, rx: 14, fill: `var(--${tv}1)`, opacity: 0 }, svg) : null;
-      const peakTx = tag ? txt(tag, { x: cx(top), 'font-size': 14, 'font-weight': 800, 'letter-spacing': '.16em', fill: '#1a1208', opacity: 0 }) : null;
+      const valTx = vals.map((v, i) => txt(fmtVal(raw[i], v), { x: cx(i), 'font-size': num(N['value-size'], 22), 'font-weight': 700, fill: N['value-color'] || (i === top ? 'var(--fg)' : 'var(--muted)'), opacity: 0 }));
+      if (labels) labels.forEach((l, i) => txt(l, { x: cx(i), y: base + 28, 'font-size': num(N['label-size'], 20), fill: N['label-color'] || 'var(--muted)' }));
+      // badges above a bar: the peak= or low= words on the marked bar, and tag= on the bar that tag-at names
+      const badges = [[top, tag, `var(--${tv}1)`, '#1a1208'], [el.tagAt === undefined ? top : el.tagAt, N.tag, 'var(--band1)', '#fff']].filter(b => b[1]).map(([i, words, fill, ink]) => {
+        const pw = words.length * 11 + 28;
+        return { i, pill: s('rect', { x: cx(i) - pw / 2, width: pw, height: 28, rx: 14, fill, opacity: 0 }, svg), words: txt(words, { x: cx(i), 'font-size': 14, 'font-weight': 800, 'letter-spacing': '.16em', fill: ink, opacity: 0 }) };
+      });
       return (p, lt) => {
         rects.forEach((r, i) => {
           const order = el.named.from === 'center' ? Math.round(Math.abs(i - (n - 1) / 2)) : el.named.from === 'last' ? n - 1 - i : i;
@@ -174,18 +237,17 @@
           glows[i].forEach(g => { g.setAttribute('height', bh); g.setAttribute('y', base - bh); });
           gloss[i].setAttribute('height', Math.max(bh - 16, 0)); gloss[i].setAttribute('y', base - bh + 8);
           valTx[i].setAttribute('y', base - bh - 10);
-          valTx[i].setAttribute('opacity', clamp((q - 0.6) * 2.5));
-          if (i === top) {
-            if (peakTx) { const o = clamp((q - 0.7) * 3.3); pill.setAttribute('y', base - bh - 68); pill.setAttribute('opacity', o); peakTx.setAttribute('y', base - bh - 49); peakTx.setAttribute('opacity', o); }
-          }
+          valTx[i].setAttribute('opacity', N.values === 'off' ? 0 : clamp((q - 0.6) * 2.5));
+          badges.filter(b => b.i === i).forEach((b, k) => { const o = clamp((q - 0.7) * 3.3), y = base - bh - 68 - k * 34; b.pill.setAttribute('y', y); b.pill.setAttribute('opacity', o); b.words.setAttribute('y', y + 19); b.words.setAttribute('opacity', o); });
         });
       };
     },
     line(el, host) {
       const raw = el.args.filter(a => Number.isFinite(parseFloat(a)));
       const vals = raw.map(parseFloat), n = vals.length;
-      const labels = el.named.labels ? el.named.labels.split(',') : null;
-      const W = el.w || 760, H = 260, PL = 56, PR = 40, PT = 40, PB = labels ? 40 : 18;
+      const N = el.named, labels = N.labels && N.labels !== 'off' ? N.labels.split(',') : null;
+      const W = extent(N.w, el.w || 760, M.w), H = extent(N.h, 260, M.h), PL = 56, PR = 40, PT = 40, PB = labels ? 40 : 18;
+      const inkL = N['label-color'] || 'var(--muted)', inkV = N['value-color'] || 'var(--fg)';
       const mx = Math.max(...vals), mn = Math.min(...vals), span = (mx - mn) || 1;
       const nice = x => { const e = Math.pow(10, Math.floor(Math.log10(x))), f = x / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; };
       const step = nice((span * 1.3) / 3);
@@ -201,57 +263,63 @@
       s('stop', { offset: 0, style: 'stop-color:var(--c1)' }, g);
       s('stop', { offset: 1, style: 'stop-color:var(--c5)' }, g);
       const ag = s('linearGradient', { id: id + 'a', x1: 0, x2: 0, y1: 0, y2: 1 }, defs);
-      s('stop', { offset: 0, style: 'stop-color:var(--c3);stop-opacity:.38' }, ag);
-      s('stop', { offset: 1, style: 'stop-color:var(--c3);stop-opacity:0' }, ag);
+      s('stop', { offset: 0, style: `stop-color:${N.stroke || 'var(--c3)'};stop-opacity:.38` }, ag);
+      s('stop', { offset: 1, style: `stop-color:${N.stroke || 'var(--c3)'};stop-opacity:0` }, ag);
       const txt = (str, attrs) => { const t = s('text', attrs, svg); t.textContent = str; return t; };
       const fmtTick = v => Math.abs(v) >= 1000 ? Math.round(v).toLocaleString('en-US') : (Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1));
       ticks.forEach(v => {
         const y = Y(v);
+        if (N.grid === 'off') return;
         s('line', { x1: PL, x2: W - PR, y1: y, y2: y, stroke: 'rgba(255,255,255,.08)', 'stroke-width': 2 }, svg);
-        txt(fmtTick(v) + unit, { x: PL - 10, y: y + 6, 'text-anchor': 'end', 'font-size': 16, fill: 'var(--muted)' });
+        txt(fmtTick(v) + unit, { x: PL - 10, y: y + 6, 'text-anchor': 'end', 'font-size': num(N['label-size'], 18) - 2, fill: inkL });
       });
-      if (labels) labels.forEach((l, i) => txt(l, { x: X(i), y: PT + H + 28, 'text-anchor': 'middle', 'font-size': 18, fill: 'var(--muted)' }));
+      if (labels) labels.forEach((l, i) => txt(l, { x: X(i), y: PT + H + 28, 'text-anchor': 'middle', 'font-size': num(N['label-size'], 18), fill: inkL }));
       let d = `M${pts[0][0]},${pts[0][1]}`;
       for (let i = 1; i < n; i++) { const mxp = (pts[i - 1][0] + pts[i][0]) / 2; d += ` C${mxp},${pts[i - 1][1]} ${mxp},${pts[i][1]} ${pts[i][0]},${pts[i][1]}`; }
       const area = s('path', { d: d + ` L${pts[n - 1][0]},${PT + H} L${pts[0][0]},${PT + H} Z`, fill: `url(#${id}a)`, opacity: 0 }, svg);
-      const path = s('path', { d, fill: 'none', stroke: `url(#${id})`, 'stroke-width': 6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
+      const path = s('path', { d, fill: 'none', stroke: N.stroke || `url(#${id})`, 'stroke-width': 6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, svg);
       const keyIdx = new Set(n <= 8 ? vals.map((_, i) => i) : [0, n - 1, vals.indexOf(mx), vals.indexOf(mn)]);
       const dots = pts.map(([x, y], i) => s('circle', { cx: x, cy: y, r: 0, fill: 'var(--fg)', stroke: 'var(--bg1)', 'stroke-width': 3 }, svg));
-      const vtx = [...keyIdx].map(i => ({ i, t: txt(fmtTick(vals[i]) + unit, { x: pts[i][0], y: pts[i][1] - 16, 'text-anchor': 'middle', 'font-size': 19, 'font-weight': 700, fill: 'var(--fg)', opacity: 0 }) }));
+      const vtx = N.values === 'off' ? [] : [...keyIdx].map(i => ({ i, t: txt(fmtTick(vals[i]) + unit, { x: pts[i][0], y: pts[i][1] - 16, 'text-anchor': 'middle', 'font-size': num(N['value-size'], 19), 'font-weight': 700, fill: inkV, opacity: 0 }) }));
       const len = path.getTotalLength ? path.getTotalLength() : 1000;
       path.style.strokeDasharray = len;
       return p => {
         path.style.strokeDashoffset = len * (1 - p);
-        area.setAttribute('opacity', clamp((p - 0.4) * 1.8));
-        dots.forEach((c, i) => c.setAttribute('r', 6.5 * clamp((p - i / (n - 1)) * 8 + 0.05) * (p > i / (n - 1) ? 1 : 0)));
+        area.setAttribute('opacity', N.fill === 'off' ? 0 : clamp((p - 0.4) * 1.8));
+        dots.forEach((c, i) => c.setAttribute('r', N.dots === 'off' ? 0 : 6.5 * clamp((p - i / (n - 1)) * 8 + 0.05) * (p > i / (n - 1) ? 1 : 0)));
         vtx.forEach(({ i, t }) => t.setAttribute('opacity', clamp((p - i / (n - 1)) * 6)));
       };
     },
     donut(el, host) {
-      const keys = Object.keys(el.named).filter(k => k !== 'title' && Number.isFinite(parseFloat(el.named[k])));
+      const N = el.named, keys = el.slices;   // the slices: every name that is not an option, with its number
       const vals = keys.map(k => parseFloat(el.named[k]));
       const total = vals.reduce((a, b) => a + b, 0);
       const pct = vals.map(v => Math.round(v / total * 100));
-      const R = 105, SW = 42, C = 2 * Math.PI * R;
+      // hole= is the share of the radius left empty: 0 is a pie, the usual ring is two thirds
+      const SW = N.hole === undefined ? 42 : 126 * (1 - N.hole), R = 126 - SW / 2, C = 2 * Math.PI * R, side = extent(N.w, el.w || 340, M.w);
+      const listed = cycle(N.colors), tint = i => listed(i) || color(i), ring = SW <= 51, inkV = N['value-color'] || 'var(--fg)';
       const box = chartBox(host, el);
-      const svg = s('svg', { viewBox: '-150 -150 300 300', width: el.w || 340, height: el.w || 340 }, box);
+      const svg = s('svg', { viewBox: '-150 -150 300 300', width: side, height: side }, box);
       s('circle', { r: R, fill: 'none', stroke: 'rgba(255,255,255,.07)', 'stroke-width': SW }, svg);
       let off = 0;
       const big = vals.indexOf(Math.max(...vals));
       const arcs = vals.map((v, i) => {
         const len = (v / total) * C, start = off; off += len;
-        const c = s('circle', { r: R, fill: 'none', stroke: color(i), 'stroke-width': SW, transform: 'rotate(-90)' }, svg);
+        const c = s('circle', { r: R, fill: 'none', stroke: tint(i), 'stroke-width': SW, transform: 'rotate(-90)' }, svg);
         const a = (start + len / 2) / C * 2 * Math.PI - Math.PI / 2;
-        const lab = pct[i] >= 8 ? s('text', { x: R * Math.cos(a), y: R * Math.sin(a) + 7, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 800, fill: '#fff', opacity: 0 }, svg) : null;
+        const lab = pct[i] >= 8 && N.values !== 'off' ? s('text', { x: R * Math.cos(a), y: R * Math.sin(a) + 7, 'text-anchor': 'middle', 'font-size': num(N['value-size'], 17), 'font-weight': 800, fill: N['value-color'] || '#fff', opacity: 0 }, svg) : null;
         if (lab) lab.textContent = pct[i] + '%';
         return { c, len, start, lab };
       });
-      const cen = s('text', { 'text-anchor': 'middle', y: 6, 'font-size': 52, 'font-weight': 800, fill: 'var(--fg)', opacity: 0 }, svg);
+      const cen = s('text', { 'text-anchor': 'middle', y: 6, 'font-size': 52, 'font-weight': 800, fill: inkV, opacity: 0 }, svg);
       cen.textContent = pct[big] + '%';
       const cenL = s('text', { 'text-anchor': 'middle', y: 34, 'font-size': 15, 'font-weight': 700, 'letter-spacing': '.2em', fill: 'var(--muted)', opacity: 0 }, svg);
       cenL.textContent = keys[big].toUpperCase();
       const legend = h('div', 'legend', box);
-      keys.forEach((k, i) => { const l = h('span', '', legend); l.innerHTML = `<i style="background:${color(i)}"></i>${k} <b>${pct[i]}%</b>`; });
+      if (N.labels === 'off') legend.style.display = 'none';
+      if (N['label-color']) legend.style.color = N['label-color'];
+      if (N['label-size']) legend.style.fontSize = N['label-size'] + 'px';
+      keys.forEach((k, i) => { const l = h('span', '', legend); l.innerHTML = `<i style="background:${tint(i)}"></i>${k} <b>${pct[i]}%</b>`; });
       return p => {
         const shown = p * C;
         arcs.forEach(a => {
@@ -260,13 +328,13 @@
           a.c.setAttribute('stroke-dashoffset', -a.start);
           if (a.lab) a.lab.setAttribute('opacity', clamp((shown - a.start - a.len * 0.55) / (a.len * 0.25)));
         });
-        const o = clamp((p - 0.7) * 3.3);
+        const o = ring && N.values !== 'off' ? clamp((p - 0.7) * 3.3) : 0;   // a pie or a thick ring has no room for words in the middle
         cen.setAttribute('opacity', o); cenL.setAttribute('opacity', o);
         legend.style.opacity = clamp((p - 0.5) * 2.5);
       };
     },
     orb(el, host) {
-      const size = parseFloat(el.named.size) || 420;
+      const size = /x$/.test(el.named.size || '') ? 420 : parseFloat(el.named.size) || 420;
       const canvas = h('canvas', 'el', host);
       canvas.width = canvas.height = size * 2;
       canvas.style.width = canvas.style.height = size + 'px';
@@ -378,7 +446,11 @@
     },
     banner: (el, host) => { const b = h('div', 'el banner', host); b.textContent = el.text[0]; },
     plus(el, host) { h('div', 'el plus', host).textContent = '+'; },
-    image(el, host) { const i = h('img', 'el imgfx', host); i.src = imgSrc(el.named.image); if (el.named.w) i.style.width = el.named.w + 'px'; },
+    image(el, host) {
+      const i = h('img', 'el imgfx', host); i.src = imgSrc(el.named.image);
+      if (!el.named.w && !el.named.h) i.style.maxHeight = M.h * 0.6 + 'px';       // no size given: never taller than most of the stage
+      if (el.named.w && el.named.h) i.style.objectFit = el.named.fit || 'cover';   // both given: fill the box, cropped (cover) or whole (contain)
+    },
     hub(el, host) {
       const wrap = h('div', 'el hub', host);
       const side = (txt, ic) => { const d = h('div', 'side', wrap); if (ic) disc(ic, d); h('div', '', d).textContent = txt; return d; };
@@ -387,7 +459,7 @@
       if (el.named.logo) { const lg = h('img', 'rlogo', ring); lg.src = imgSrc(el.named.logo); }
       h('div', 't', ring).textContent = el.text[0];
       if (el.named.right) side(el.named.right, el.named.righticon);
-      return p => { ring.style.transform = `scale(${0.8 + 0.2 * p})`; wrap.style.opacity = clamp(p * 2); };
+      if (el.in === 'pop') return p => { ring.style.transform = `scale(${0.8 + 0.2 * p})`; };   // the ring swells inside the default pop
     },
     cover(el, host) {
       if (el.named.variant === 'thanks') {
@@ -524,22 +596,29 @@
     stage(el, host) {
       const root = host.parentElement;
       const bgEl = h('div', 'el worldsky', root);
-      const [b1, b2] = (el.named.bg || '#bfe6ff,#f4fbff').split(',');
-      bgEl.style.background = `linear-gradient(180deg, ${b1}, ${b2 || '#fff'})`;
+      // backdrop: a studio that follows the theme (dark or light, lit with the accent), two colours of your own, or bg=sky for the meadow
+      const sky = el.named.bg === 'sky', [b1, b2] = (sky ? '#bfe6ff,#f4fbff' : el.named.bg || '').split(',');
+      bgEl.style.background = b1 ? `linear-gradient(180deg, ${b1}, ${b2 || '#fff'})` : 'radial-gradient(90% 80% at 50% 34%, color-mix(in srgb, var(--c3) 30%, var(--bg2)), var(--bg1) 78%)';
       const svg = s('svg', { viewBox: `0 0 ${M.w} ${M.h}`, width: M.w, height: M.h, class: 'el worldcv' }, root);
       const defs = s('defs', {}, svg);
       const cam = s('g', {}, svg);
       const mk = (tag, a, parent) => s(tag, a, parent);
       // ---- layered meadow: clouds drift, hills parallax with the camera ----
       const cloudsG = mk('g', {}, cam), hillsFar = mk('g', {}, cam), hillsNear = mk('g', {}, cam), floor = mk('g', {}, cam), chars = mk('g', {}, cam);
-      const clouds = [[0.12, 0.2, 1.0, 9], [0.55, 0.12, 0.75, 6], [0.82, 0.27, 0.9, 7], [0.35, 0.36, 0.55, 5]].map(([x, y, k, v]) => {
+      const clouds = (sky ? [[0.12, 0.2, 1.0, 9], [0.55, 0.12, 0.75, 6], [0.82, 0.27, 0.9, 7], [0.35, 0.36, 0.55, 5]] : []).map(([x, y, k, v]) => {
         const g = mk('g', {}, cloudsG);
         [[0, 0, 46], [44, -12, 58], [96, 0, 46], [48, 14, 70]].forEach(([dx, dy, r]) => mk('circle', { cx: dx * k, cy: dy * k, r: r * k * 0.7, fill: '#fff', opacity: 0.92 }, g));
         return { g, x, y, v };
       });
-      mk('path', { d: `M0 ${M.h * 0.66} Q ${M.w * 0.22} ${M.h * 0.5} ${M.w * 0.5} ${M.h * 0.62} T ${M.w} ${M.h * 0.58} V ${M.h} H0 Z`, fill: '#b9e6a0' }, hillsFar);
-      mk('path', { d: `M0 ${M.h * 0.78} Q ${M.w * 0.3} ${M.h * 0.66} ${M.w * 0.62} ${M.h * 0.76} T ${M.w} ${M.h * 0.72} V ${M.h} H0 Z`, fill: el.named.ground || '#9fd878' }, hillsNear);
-      mk('ellipse', { cx: M.w / 2, cy: M.h * 0.93, rx: M.w * 0.7, ry: M.h * 0.1, fill: '#8ccb68' }, floor);
+      if (sky) {
+        mk('path', { d: `M0 ${M.h * 0.66} Q ${M.w * 0.22} ${M.h * 0.5} ${M.w * 0.5} ${M.h * 0.62} T ${M.w} ${M.h * 0.58} V ${M.h} H0 Z`, fill: '#b9e6a0' }, hillsFar);
+        mk('path', { d: `M0 ${M.h * 0.78} Q ${M.w * 0.3} ${M.h * 0.66} ${M.w * 0.62} ${M.h * 0.76} T ${M.w} ${M.h * 0.72} V ${M.h} H0 Z`, fill: el.named.ground || '#9fd878' }, hillsNear);
+        mk('ellipse', { cx: M.w / 2, cy: M.h * 0.93, rx: M.w * 0.7, ry: M.h * 0.1, fill: '#8ccb68' }, floor);
+      } else {   // studio floor: a wide soft disc the characters stand on, with a lighter pool in the middle
+        const pool = mk('radialGradient', { id: 'floor' + el.line }, defs);
+        [[0, 0.2], [0.6, 0.09], [1, 0]].forEach(([offset, alpha]) => mk('stop', { offset, style: `stop-color:var(--c1);stop-opacity:${alpha}` }, pool));
+        mk('ellipse', { cx: M.w / 2, cy: M.h * 0.9, rx: M.w * 0.6, ry: M.h * 0.15, fill: `url(#floor${el.line})` }, floor);
+      }
       const kids = el.children || [];
       // ---- expressions as data: every mood is a parameter set; moods blend smoothly ----
       const MOOD = {
@@ -553,35 +632,107 @@
       };
       const mood = (a, b, k) => { const o = {}; for (const key in a) o[key] = a[key] + (b[key] - a[key]) * k; return o; };
       const mascots = {};
+      // ---- characters: one rig (two eyes, brows, a mouth, two arms, ears or a tail that sway, body squash) and one
+      // drawing per kind. A kind draws itself with the tools in D, in its own units (300 tall, standing on y=0), and
+      // returns where its rig parts go. Colours come from color= (the theme accent when not given).
+      const INK = '#1b2433', mix = (c, pct, other) => `color-mix(in srgb, ${c} ${pct}%, ${other})`;
+      const capsule = 'M -15 0 C -19 36, -17 62, -13 78 A 13 13 0 0 0 13 78 C 17 62, 19 36, 15 0 Z';   // a short arm, hanging from its shoulder
+      const CAST = {
+        owl({ P, E, L, part, limbs, T, fill }) {
+          [-1, 1].forEach(sg => { const g = part(sg * 78, -262, sg * 30, sg * 24); P('M -20 14 C -26 -14, -16 -40, 6 -56 C 16 -36, 22 -10, 20 14 Z', T.col, g, { transform: `scale(${-sg},1)` }); P('M -7 6 C -10 -10, -4 -26, 4 -38 C 9 -24, 10 -8, 9 6 Z', T.light, g, { transform: `scale(${-sg},1)`, opacity: 0.45 }); });
+          const arms = limbs();
+          arms.forEach((g, k) => { const sg = k ? 1 : -1; P(`M 0 -10 C ${sg * 44} 8, ${sg * 52} 92, ${sg * 12} 140 C ${-sg * 18} 104, ${-sg * 26} 30, 0 -10 Z`, T.dark, g); L(`M ${sg * 10} 30 C ${sg * 26} 56, ${sg * 26} 92, ${sg * 14} 118`, T.light, 3, g, { opacity: 0.3 }); });
+          [-1, 1].forEach(sg => { E(sg * 40, -4, 30, 12, T.beak); [-1, 0, 1].forEach(k => L(`M ${sg * 40 + k * 13} -10 v 9`, mix(T.beak, 60, '#000'), 3, undefined, { opacity: 0.45 })); });
+          P('M 0 -300 C 92 -300, 132 -222, 132 -140 C 132 -52, 96 0, 0 0 C -96 0, -132 -52, -132 -140 C -132 -222, -92 -300, 0 -300 Z', fill);
+          P('M 0 -150 C 52 -150, 84 -116, 82 -72 C 80 -26, 40 -8, 0 -8 C -40 -8, -80 -26, -82 -72 C -84 -116, -52 -150, 0 -150 Z', T.belly);
+          [[-104, [-28, 0, 28]], [-74, [-14, 14]], [-44, [0]]].forEach(([y, xs]) => xs.forEach(x => L(`M ${x - 9} ${y} q 9 9 18 0`, mix(T.col, 42, '#fff'), 4)));
+          P('M 0 -258 C 30 -284, 104 -280, 118 -222 C 126 -178, 86 -146, 44 -150 C 24 -152, 8 -162, 0 -174 C -8 -162, -24 -152, -44 -150 C -86 -146, -126 -178, -118 -222 C -104 -280, -30 -284, 0 -258 Z', mix(T.col, 13, '#fff'));
+          const mouth = part(0, 0, 0, 0, 0);
+          P('M -20 -178 Q 0 -206 20 -178 Q 0 -146 -20 -178 Z', T.beak, mouth); P('M -10 -184 Q 0 -198 10 -184 Q 0 -178 -10 -184 Z', '#fff', mouth, { opacity: 0.35 });
+          const jaw = mk('path', { d: 'M -15 -164 Q 0 -140 15 -164 Q 0 -128 -15 -164 Z', fill: '#d9770a', opacity: 0 }, mouth);
+          return { arms, mouth, jaw, eye: [56, -210], eyes: { rx: 44, ry: 44, white: '#fff', iris: [29, mix(T.col, 50, INK)], pupil: [16, 16] }, brow: [-264, 52, 11], arm: [108, -176], blush: [100, -160], gaze: 0.8, jawMove: o => `translate(0,${o * 14})` };
+        },
+        robot({ P, E, R, L, part, limbs, T, fill }) {
+          const tip = part(0, -298, 0, 34, 5); L('M 0 2 V -32', T.dark, 7, tip); E(0, -42, 13, 13, T.glow, tip); E(-4, -46, 4, 4, '#fff', tip, { opacity: 0.7 });
+          const arms = limbs();
+          arms.forEach(g => { R(-14, -6, 28, 80, 14, T.dark, g); E(0, 84, 20, 20, T.light, g); R(-15, 56, 30, 9, 4, T.deep, g, { opacity: 0.5 }); E(0, 0, 19, 19, T.deep, g); });
+          [-1, 1].forEach(sg => { R(sg * 40 - 21, -40, 42, 34, 12, T.dark); R(sg * 42 - 30, -20, 60, 22, 11, T.deep); });
+          R(-78, -134, 156, 108, 36, fill); R(-24, -148, 48, 22, 8, T.dark);
+          E(0, -80, 17, 17, mix(T.col, 55, '#000')); E(0, -80, 10, 10, T.glow); [-1, 1].forEach(sg => E(sg * 46, -104, 5, 5, T.dark));
+          [-1, 1].forEach(sg => R(sg * 126 - 11, -246, 22, 48, 10, T.dark));
+          R(-122, -306, 244, 170, 66, fill);
+          R(-96, -280, 192, 116, 48, '#0e1422'); P('M -76 -262 C -66 -272, -30 -274, -8 -272 C -40 -266, -64 -254, -76 -236 Z', '#fff', undefined, { opacity: 0.07 });
+          const mouth = part(0, 0, 0, 0, 0);
+          L('M -15 -190 Q 0 -180 15 -190', T.glow, 5, mouth);
+          const jaw = R(-17, -196, 34, 26, 11, T.glow, mouth, { opacity: 0 });
+          return { arms, mouth, jaw, eye: [46, -228], eyes: { rx: 15, ry: 20, led: T.glow }, brow: [-260, 32, 7, T.glow], browK: 0.45, arm: [90, -112], blush: [78, -198, 9], gaze: 0.7, jawMove: o => `translate(0,-196) scale(1,${0.25 + 0.75 * o}) translate(0,196)` };
+        },
+        fox({ P, E, L, part, limbs, T, fill }) {
+          const tail = part(56, -30, 0, 14, 4); P('M 0 0 C 74 12, 128 -40, 118 -112 C 112 -156, 86 -182, 62 -172 C 78 -132, 66 -70, 0 -46 Z', T.col, tail); P('M 118 -112 C 112 -156, 86 -182, 62 -172 C 72 -152, 76 -128, 74 -104 C 90 -98, 106 -102, 118 -112 Z', '#fff', tail, { opacity: 0.92 });
+          [-1, 1].forEach(sg => { const g = part(sg * 80, -248, sg * 12, sg * 30); P('M -36 12 C -42 -34, -30 -78, -4 -104 C 22 -78, 38 -34, 36 12 Z', T.col, g); P('M -24 -56 C -20 -76, -12 -92, -4 -104 C 6 -92, 14 -76, 20 -56 Z', T.deep, g); P('M -18 8 C -20 -20, -14 -42, -4 -54 C 8 -42, 16 -20, 18 8 Z', T.pale, g); });
+          [-1, 1].forEach(sg => E(sg * 38, -6, 30, 13, T.deep));
+          P('M 0 -164 C 60 -164, 88 -70, 80 -20 C 76 0, -76 0, -80 -20 C -88 -70, -60 -164, 0 -164 Z', fill); P('M 0 -150 C 36 -140, 48 -82, 0 -40 C -48 -82, -36 -140, 0 -150 Z', '#fff', undefined, { opacity: 0.9 });
+          P('M 0 -310 C 72 -310, 140 -266, 152 -208 C 158 -180, 98 -126, 0 -118 C -98 -126, -158 -180, -152 -208 C -140 -266, -72 -310, 0 -310 Z', fill);
+          P('M -150 -204 C -104 -196, -58 -214, 0 -176 C 58 -214, 104 -196, 150 -204 C 154 -178, 98 -126, 0 -118 C -98 -126, -154 -178, -150 -204 Z', '#fff', undefined, { opacity: 0.94 });
+          const arms = limbs();   // in front, so a wave shows against the head
+          arms.forEach(g => { P(capsule, T.col, g); P(capsule, '#000', g, { opacity: 0.1 }); E(0, 76, 14, 14, T.deep, g); });
+          const mouth = part(0, 0, 0, 0, 0);
+          const jaw = E(0, -146, 13, 13, '#7a2a2a', mouth, { opacity: 0 });
+          P('M -14 -172 Q 0 -178 14 -172 Q 6 -156 0 -154 Q -6 -156 -14 -172 Z', INK, mouth); L('M -15 -148 Q -7 -140 0 -150 Q 7 -140 15 -148', INK, 3.5, mouth);
+          return { arms, mouth, jaw, eye: [56, -224], eyes: { rx: 21, ry: 25, white: '#fff', pupil: [13, 14] }, brow: [-264, 34, 9], arm: [74, -122], blush: [108, -184], gaze: 0.42, jawMove: o => `translate(0,-154) scale(1,${o}) translate(0,154)` };
+        },
+        cat({ P, E, L, part, limbs, T, fill }) {
+          const tail = part(66, -26, 0, 20, 5); L('M 0 0 C 74 4, 100 -60, 72 -124', T.col, 26, tail); L('M 84 -96 C 84 -108, 80 -116, 72 -124', T.pale, 26, tail);
+          [-1, 1].forEach(sg => { const g = part(sg * 84, -270, sg * 10, sg * 26); P('M -38 14 C -42 -28, -26 -66, -2 -88 C 22 -66, 40 -28, 38 14 Z', T.col, g); P('M -20 10 C -22 -18, -12 -42, -2 -56 C 10 -42, 22 -18, 20 10 Z', '#ffb3c1', g); });
+          [-1, 1].forEach(sg => E(sg * 34, -6, 28, 13, T.pale));
+          P('M 0 -160 C 64 -160, 94 -70, 86 -18 C 82 0, -82 0, -86 -18 C -94 -70, -64 -160, 0 -160 Z', fill); E(0, -66, 38, 48, T.pale);
+          P('M 0 -320 C 86 -320, 142 -276, 142 -216 C 142 -160, 86 -120, 0 -120 C -86 -120, -142 -160, -142 -216 C -142 -276, -86 -320, 0 -320 Z', fill);
+          [[-26, 14], [0, 20], [26, 14]].forEach(([x, len]) => L(`M ${x} -312 v ${len}`, T.deep, 7, undefined, { opacity: 0.35 }));
+          [-1, 1].forEach(sg => { E(sg * 17, -174, 25, 19, T.pale); [-12, 0, 12].forEach((dy, k) => L(`M ${sg * 44} ${-178 + dy * 0.5} L ${sg * 118} ${-184 + dy * 1.6}`, k === 1 ? '#fff' : T.pale, 2.5, undefined, { opacity: 0.7 })); });
+          const arms = limbs();
+          arms.forEach(g => { P(capsule, T.col, g); P(capsule, '#000', g, { opacity: 0.1 }); E(0, 76, 14, 14, T.pale, g); });
+          const mouth = part(0, 0, 0, 0, 0);
+          const jaw = E(0, -166, 11, 12, '#7a2a2a', mouth, { opacity: 0 });
+          P('M -10 -196 Q 0 -201 10 -196 Q 4 -185 0 -183 Q -4 -185 -10 -196 Z', '#ff8fa3', mouth); L('M -14 -174 Q -7 -166 0 -177 Q 7 -166 14 -174', INK, 3.5, mouth);
+          return { arms, mouth, jaw, eye: [58, -230], eyes: { rx: 27, ry: 29, white: '#f6d04d', pupil: [9, 21] }, brow: [-274, 30, 8], arm: [76, -118], blush: [104, -192], gaze: 0.36, jawMove: o => `translate(0,-176) scale(1,${o}) translate(0,176)` };
+        },
+      };
       kids.filter(c => c.type === 'mascot').forEach((c, i) => {
-        const n = c.named, col = n.color || '#58cc02', sz = parseFloat(n.size || 1), U = sz;
-        const belly = n.belly || `color-mix(in srgb, ${col} 32%, #fff)`, beak = n.beak || '#ffb020', dark = `color-mix(in srgb, ${col} 72%, #000)`, light = `color-mix(in srgb, ${col} 82%, #fff)`;
+        const n = c.named, col = n.color || 'var(--c3)', U = parseFloat(n.size || 1);
+        const T = { col, light: mix(col, 78, '#fff'), dark: mix(col, 72, '#000'), deep: mix(col, 46, '#000'), pale: mix(col, 16, '#fff'), glow: mix(col, 30, '#fff'), belly: n.belly || mix(col, 24, '#fff'), beak: n.beak || '#ffb020' };
         const px = parseFloat(n.x !== undefined ? n.x : 0.5) * M.w, py = parseFloat(n.y !== undefined ? n.y : 0.9) * M.h;
         const gid = 'mg' + i + '_' + Math.round(Math.random() * 1e6);
-        const grad = mk('radialGradient', { id: gid, cx: '0.38', cy: '0.28', r: '0.85' }, defs);
-        mk('stop', { offset: 0, 'stop-color': light }, grad); mk('stop', { offset: 0.55, 'stop-color': col }, grad); mk('stop', { offset: 1, 'stop-color': dark }, grad);
-        const g0 = mk('g', {}, chars), body = mk('g', {}, g0);
-        mk('ellipse', { cx: 0, cy: 6, rx: 150 * U, ry: 20 * U, fill: '#1c3a12', opacity: 0.16 }, g0);
-        const wingPath = (sx) => `M 0 ${-6 * U} C ${sx * 46 * U} ${14 * U}, ${sx * 52 * U} ${96 * U}, ${sx * 10 * U} ${142 * U} C ${-sx * 22 * U} ${104 * U}, ${-sx * 30 * U} ${28 * U}, 0 ${-6 * U} Z`;
-        const wing = (sx) => { const pv = mk('g', {}, body); mk('path', { d: wingPath(sx), fill: dark }, pv); mk('path', { d: wingPath(sx), fill: 'none', stroke: `color-mix(in srgb, ${col} 50%, #000)`, 'stroke-width': 3 * U, opacity: 0.35 }, pv); return pv; };
-        const wL = wing(-1), wR = wing(1);
-        [-1, 1].forEach(sx => { mk('ellipse', { cx: sx * 58 * U, cy: -9 * U, rx: 46 * U, ry: 18 * U, fill: beak }, body); [-1, 0, 1].forEach(k => mk('rect', { x: (sx * 58 + k * 15 - 3) * U, y: -20 * U, width: 6 * U, height: 14 * U, rx: 3 * U, fill: '#e8890a', opacity: 0.5 }, body)); });
-        mk('ellipse', { cx: 0, cy: -150 * U, rx: 138 * U, ry: 152 * U, fill: `url(#${gid})` }, body);
-        const tufts = [-1, 1].map(sx => { const t = mk('g', { transform: `translate(${sx * 74 * U},${-296 * U})` }, body); mk('ellipse', { cx: 0, cy: -10 * U, rx: 24 * U, ry: 42 * U, fill: col }, t); mk('ellipse', { cx: 0, cy: -4 * U, rx: 12 * U, ry: 28 * U, fill: light, opacity: 0.45 }, t); return t; });
-        mk('ellipse', { cx: 0, cy: -84 * U, rx: 94 * U, ry: 86 * U, fill: belly }, body);
-        for (let r = 0; r < 2; r++) for (let k = -2; k <= 2; k++) mk('path', { d: `M ${(k * 30 - 14) * U} ${(-70 + r * 34) * U} q ${14 * U} ${14 * U} ${28 * U} 0`, fill: 'none', stroke: `color-mix(in srgb, ${col} 25%, #fff)`, 'stroke-width': 4 * U, 'stroke-linecap': 'round', opacity: 0.8 }, body);
-        const cheeks = [-1, 1].map(sx => mk('ellipse', { cx: sx * 104 * U, cy: -150 * U, rx: 22 * U, ry: 14 * U, fill: '#ff7d8a', opacity: 0 }, body));
-        const eyes = [-1, 1].map(sx => {
-          const g = mk('g', { transform: `translate(${sx * 66 * U},${-205 * U})` }, body), lid = mk('g', {}, g);
-          mk('circle', { r: 61 * U, fill: '#fff' }, lid); mk('circle', { r: 61 * U, fill: 'none', stroke: `color-mix(in srgb, ${col} 60%, #000)`, 'stroke-width': 3 * U, opacity: 0.25 }, lid);
-          const pup = mk('g', {}, lid); mk('circle', { r: 28 * U, fill: '#1b2733' }, pup); mk('circle', { cx: 9 * U, cy: -10 * U, r: 10 * U, fill: '#fff' }, pup); mk('circle', { cx: -9 * U, cy: 10 * U, r: 5 * U, fill: '#fff', opacity: 0.8 }, pup);
+        const grad = mk('radialGradient', { id: gid, cx: '0.36', cy: '0.22', r: '0.9' }, defs);
+        [[0, T.light], [0.5, col], [1, mix(col, 78, '#000')]].forEach(([offset, colour]) => mk('stop', { offset, style: `stop-color:${colour}` }, grad));
+        const shadow = mk('ellipse', { rx: 128 * U, ry: 17 * U, cy: 5 * U, fill: '#000' }, chars);   // stays on the ground when the character hops
+        const g0 = mk('g', {}, chars), body = mk('g', {}, g0), art = mk('g', { transform: `scale(${U})` }, body);
+        const paint = (tag, attrs, fill, parent, more) => mk(tag, { ...attrs, style: `fill:${fill}`, ...more }, parent || art);
+        const sway = [];
+        const D = {
+          T, fill: `url(#${gid})`,
+          P: (d, fill, parent, more) => paint('path', { d }, fill, parent, more),
+          E: (cx, cy, rx, ry, fill, parent, more) => paint('ellipse', { cx, cy, rx, ry }, fill, parent, more),
+          R: (x, y, width, height, rx, fill, parent, more) => paint('rect', { x, y, width, height, rx }, fill, parent, more),
+          L: (d, stroke, width, parent, more) => mk('path', { d, fill: 'none', style: `stroke:${stroke}`, 'stroke-width': width, 'stroke-linecap': 'round', ...more }, parent || art),
+          part(x, y, rot, droop, amp = 4) { const g = mk('g', { transform: `translate(${x},${y}) rotate(${rot})` }, art); if (droop || amp) sway.push({ g, x, y, rot, droop, amp }); return g; },   // an ear, tuft or tail: it sways, and droops with the mood
+          limbs: () => [mk('g', {}, art), mk('g', {}, art)],
+        };
+        const rig = CAST[n.kind || 'owl'](D), e = rig.eyes, [bx, by, br = 22] = rig.blush;
+        const cheeks = [-1, 1].map(sg => D.E(sg * bx, by, br, br * 0.62, '#ff7d8a', art, { opacity: 0 }));
+        const eyes = [-1, 1].map(sg => {
+          const g = mk('g', { transform: `translate(${sg * rig.eye[0]},${rig.eye[1]})` }, art), lid = mk('g', {}, g);
+          if (e.white) { D.E(0, 0, e.rx, e.ry, e.white, lid); mk('ellipse', { rx: e.rx, ry: e.ry, fill: 'none', style: `stroke:${T.deep}`, 'stroke-width': 2.5, opacity: 0.25 }, lid); }
+          const pup = mk('g', {}, lid);
+          if (e.led) D.R(-e.rx, -e.ry, 2 * e.rx, 2 * e.ry, e.rx, e.led, pup);
+          else {
+            const [rx, ry] = e.pupil;
+            if (e.iris) D.E(0, 0, e.iris[0], e.iris[0], e.iris[1], pup);
+            D.E(0, 0, rx, ry, INK, pup); D.E(rx * 0.42, -ry * 0.42, rx * 0.4, rx * 0.4, '#fff', pup); D.E(-rx * 0.4, ry * 0.45, rx * 0.2, rx * 0.2, '#fff', pup, { opacity: 0.8 });
+          }
           return { g, lid, pup };
         });
-        const brow = [-1, 1].map(() => mk('rect', { x: -28 * U, y: -6 * U, width: 56 * U, height: 13 * U, rx: 6.5 * U, fill: dark }, body));
-        const beakG = mk('g', {}, body);
-        mk('path', { d: `M ${-30 * U} ${-170 * U} Q 0 ${-212 * U} ${30 * U} ${-170 * U} Q 0 ${-122 * U} ${-30 * U} ${-170 * U} Z`, fill: beak }, beakG);
-        const jaw = mk('path', { d: `M ${-24 * U} ${-150 * U} Q 0 ${-116 * U} ${24 * U} ${-150 * U} Q 0 ${-96 * U} ${-24 * U} ${-150 * U} Z`, fill: '#d9770a', opacity: 0 }, beakG);
-        mascots[c.text[0]] = { name: c.text[0], g0, body, wL, wR, tufts, cheeks, eyes, brow, beakG, jaw, px, py, U, seed: i * 1.9 + 0.3, base: MOOD[n.mood || 'neutral'] };
+        const brow = [-1, 1].map(() => D.R(-rig.brow[1] / 2, -rig.brow[2] / 2, rig.brow[1], rig.brow[2], rig.brow[2] / 2, rig.brow[3] || T.deep));
+        mascots[c.text[0]] = { name: c.text[0], g0, body, shadow, sway, cheeks, eyes, brow, rig, px, py, U, seed: i * 1.9 + 0.3, base: MOOD[n.mood || 'neutral'] };
       });
       const confetti = Array.from({ length: 28 }, (_, i) => ({ x: ((i * 37) % 100) / 100 - 0.5, v: 260 + (i * 53) % 220, w: ((i * 29) % 100) / 100 - 0.5, c: ['#58cc02', '#ffc800', '#1cb0f6', '#ff4b4b', '#ce82ff'][i % 5], rot: i * 40 }));
       const conf = confetti.map(c => mk('rect', { width: 14, height: 8, rx: 2, fill: c.c, opacity: 0 }, svg));
@@ -618,21 +769,22 @@
             if (a.verb === 'sad') { sy = 1 - 0.07 * w; wl = 0.12 + 0.5 * w; wr = -0.12 - 0.5 * w; brow = 0.4 * w; py += 12 * w; }
           });
           m.g0.setAttribute('transform', `translate(${m.px},${m.py + jy})`);
+          const air = clamp(-jy / (120 * U)), R = m.rig;   // 0 standing, 1 at the top of a jump: the ground shadow shrinks and fades under the character
+          m.shadow.setAttribute('transform', `translate(${m.px},${m.py}) scale(${1 - 0.3 * air})`); m.shadow.setAttribute('opacity', 0.2 - 0.1 * air);
           m.body.setAttribute('transform', `rotate(${rot * 57.3}) scale(${sx},${sy})`);
-          m.wL.setAttribute('transform', `translate(${-128 * U},${-150 * U}) rotate(${wl * 57.3})`); m.wR.setAttribute('transform', `translate(${128 * U},${-150 * U}) rotate(${wr * 57.3})`);
-          m.tufts.forEach((tf, i2) => tf.setAttribute('transform', `translate(${(i2 ? 1 : -1) * 74 * U},${(-296 + 6 * cur.droop) * U}) rotate(${(i2 ? 1 : -1) * (22 + 4 * Math.sin(t * 3 + i2) + 22 * cur.droop)})`));
-          const blink = ((t + m.seed) % 3.1) < 0.12 ? 0.08 : 1;
-          m.eyes.forEach(e => { e.lid.setAttribute('transform', `scale(1,${Math.max(0.08, blink * cur.lid * (1 - 0.55 * squint))})`); e.pup.setAttribute('transform', `translate(${px * U},${py * U}) scale(${cur.pupil})`); });
-          m.brow.forEach((b, i2) => { const sg = i2 ? 1 : -1; b.setAttribute('transform', `translate(${sg * 66 * U},${(-282 + browY - 6 * squint) * U}) rotate(${(brow * -sg) * 57.3})`); });
+          R.arms.forEach((a, k) => a.setAttribute('transform', `translate(${(k ? 1 : -1) * R.arm[0]},${R.arm[1]}) rotate(${(k ? wr : wl) * 57.3})`));
+          m.sway.forEach((w, k) => w.g.setAttribute('transform', `translate(${w.x},${w.y + 6 * cur.droop}) rotate(${w.rot + w.amp * Math.sin(t * 3 + k) + w.droop * cur.droop})`));
+          const bl = ((t + m.seed) % 3.1) / 0.24, blink = bl < 1 ? 1 - 0.92 * Math.sin(Math.PI * bl) : 1;   // a smooth blink every 3.1 s
+          m.eyes.forEach(e => { e.lid.setAttribute('transform', `scale(1,${Math.max(0.08, blink * cur.lid * (1 - 0.55 * squint))})`); e.pup.setAttribute('transform', `translate(${px * R.gaze},${py * R.gaze}) scale(${cur.pupil})`); });
+          m.brow.forEach((b, k) => { const sg = k ? 1 : -1; b.setAttribute('transform', `translate(${sg * R.eye[0]},${R.brow[0] + (browY - 6 * squint) * (R.browK || 1)}) rotate(${(brow * -sg) * 57.3})`); });
           m.cheeks.forEach(c => c.setAttribute('opacity', 0.55 * cur.blush));
-          m.beakG.setAttribute('transform', `translate(0,${-4 * cur.droop * U})`);
-          m.jaw.setAttribute('opacity', open > 0.05 ? 1 : 0); m.jaw.setAttribute('transform', `translate(0,${open * 16 * U})`);
+          R.mouth.setAttribute('transform', `translate(0,${-4 * cur.droop})`);
+          R.jaw.setAttribute('opacity', open > 0.05 ? 1 : 0); R.jaw.setAttribute('transform', R.jawMove(open));
         });
         conf.forEach((r, i) => {
-          if (confK < 0) { r.setAttribute('opacity', 0); return; }
-          const c = confetti[i], tt = confK * 2.6;
+          const c = confetti[i], tt = Math.max(confK, 0) * 2.6;   // placed every frame, shown only during a cheer: nothing is left over from an earlier time
           r.setAttribute('x', confX + c.x * 520 + c.w * 90 * tt); r.setAttribute('y', confY - c.v * tt * 0.75 + 520 * tt * tt * 0.55);
-          r.setAttribute('transform', `rotate(${c.rot + tt * 360 * (c.w + 0.6)} ${confX + c.x * 520} ${confY})`); r.setAttribute('opacity', clamp(1.4 - confK));
+          r.setAttribute('transform', `rotate(${c.rot + tt * 360 * (c.w + 0.6)} ${confX + c.x * 520} ${confY})`); r.setAttribute('opacity', confK < 0 ? 0 : clamp(1.4 - confK));
         });
       };
     },
@@ -759,7 +911,7 @@
       };
     },
     shape(el, host) {
-      const size = parseFloat(el.named.size) || 140;
+      const size = /x$/.test(el.named.size || '') ? 140 : parseFloat(el.named.size) || 140;
       const kind = el.args[0] || 'circle';
       const e = h('div', 'el', host);
       e.style.cssText = `width:${size}px;height:${size}px;background:${el.named.color || 'linear-gradient(135deg,var(--c1),var(--c3))'};` +
@@ -777,7 +929,15 @@
 
   const scenes = M.scenes.map(sc => {
     const node = h('div', 'scene', stage);
+    if (sc.bg) {   // the slide's own background: a colour, a gradient, or a picture fitted to cover; dim lays a veil over it
+      const veil = sc.dim ? `rgba(${sc.mode === 'light' ? '255,255,255' : '0,0,0'},${sc.dim})` : '';
+      node.style.background = (veil ? `linear-gradient(${veil},${veil}),` : '') + (sc.bg[0] === '@' ? `url("${imgSrc(sc.bg)}") center/cover no-repeat` : sc.bg);
+      node.classList.add('hasbg');
+      if (sc.mode && sc.mode !== M.mode) node.dataset.mode = sc.mode;   // light text on a dark slide in a light deck, and the reverse
+    }
     const stack = h('div', 'stack ' + sc.layout, node);
+    if (sc.align) { stack.style.textAlign = sc.align; if (sc.layout !== 'slide') { stack.style.alignItems = SIDE[sc.align]; stack.style.width = '100%'; } }   // the whole block: left, centre or right
+    if (sc.valign) (sc.layout === 'slide' ? stack : node).style.justifyContent = SIDE[sc.valign];                                                  // and top, centre or bottom
     if (M.corner && sc.layout === 'slide' && !sc.els.some(e => e.type === 'cover' || e.type === 'divider')) h('img', 'corner', node).src = imgSrc(M.corner);
     const items = [];
     const add = (el, host) => {
@@ -787,10 +947,13 @@
       else if (typeof made === 'function') { setP = made; node_ = host.lastElementChild; }
       else node_ = host.lastElementChild;
       if (el.named.mt && node_) node_.style.marginTop = el.named.mt + 'px';
+      if (node_) custom(node_, el, host === stack);
       items.push({ el, node: node_, setP, text });
     };
     sc.els.forEach(el => add(el, stack));
-    return { sc, node, stack, items };
+    // Seconds the slide takes to arrive. speed= on the motion line shortens it like the builds.
+    const tin = sc.in ? Math.min(0.6 / (M.speed || 1), (sc.end - sc.start) / 2) : 0;
+    return { sc, node, stack, items, tin };
   });
 
   // Layout guard: LLMs cannot judge pixel sizes, so the runtime measures every scene
@@ -810,6 +973,7 @@
   const pad2 = n => String(n).padStart(2, '0');
   const showNums = M.numbers && new URLSearchParams(location.search).get('nonum') !== '1';
   const badge = showNums ? h('div', 'slidenum', stage) : null, bar = showNums ? h('div', 'progress', stage) : null;
+  if (showNums) stage.classList.add('counted');
   function render(t) {
     if (badge) {
       const i = Math.max(0, M.scenes.findIndex(sc => t >= sc.start && t < sc.end));
@@ -817,16 +981,25 @@
       bar.style.width = (100 * t / M.dur) + '%';
     }
     drawBackground(t);
-    scenes.forEach(({ sc, node, items }, index) => {
+    scenes.forEach((scene, index) => {
+      const { sc, node, items, tin } = scene, next = scenes[index + 1];
       const on = t >= sc.start && t < sc.end;
-      node.style.display = on ? 'flex' : 'none';
-      if (!on) return;
-      // Scenes fade into the next one. The last scene holds: a finished piece keeps its last card on screen.
-      const o = index === scenes.length - 1 && !loopMode ? 1 : clamp((sc.end - t) / 0.45); node.style.opacity = o;  node.style.transform = o < 1 ? `scale(${1 + (1 - o) * 0.035})` : '';
-      items.forEach(({ el, node: n, setP, text }) => {
-        const lt = t - sc.start - el.at;
+      // A slide that does not fade out stays on stage, on its last frame, while the next one arrives over it.
+      const held = !on && next && fades(index) === 'none' && t >= sc.end && t < sc.end + next.tin;
+      node.style.display = on || held ? 'flex' : 'none';
+      if (!on && !held) return;
+      let move = {};
+      if (held) move = transit(next.sc.in, EASE.inout((t - sc.end) / next.tin), -1);
+      else if (t < sc.start + tin) move = transit(sc.in, EASE.inout((t - sc.start) / tin), 1);
+      else if (fades(index) === 'fade') { const o = clamp((sc.end - t) / 0.45); move = { o, tf: o < 1 ? `scale(${1 + (1 - o) * 0.035})` : '' }; }
+      node.style.opacity = move.o === undefined ? 1 : move.o; node.style.transform = move.tf || ''; node.style.clipPath = move.clip || '';
+      const st = held ? sc.end - 0.001 : t;
+      items.forEach(item => {
+        const { el, node: n, setP, text } = item, kit = KIT.has(el.type);
+        if (el.named.opacity !== undefined && n) n.style.opacity = '';   // start clean each frame: opacity= multiplies what the entrance sets below
+        const lt = st - sc.start - el.at;
         const ease = easeBy(el.ease || (el.in === 'pop' ? 'back' : 'out'));
-        const raw = clamp(lt / el.dur);
+        const raw = kit && el.in === 'none' ? 1 : clamp(lt / el.dur);   // in=none: the component is simply there
         const p = ease(raw);
         if (setP) setP(el.type === 'bars' ? raw : p, lt);
         if (text !== null) {
@@ -835,11 +1008,19 @@
         } else if (['bars', 'line', 'donut', 'shape', 'orb'].includes(el.type)) {
           if (el.type === 'shape' || el.type === 'orb') applyIn(n, el.in, p);
           else if (el.in !== 'none') n.style.opacity = clamp(raw * 6);
-        } else if (!setP || el.type === 'steps' || el.type === 'bullets' || el.type === 'hub') {
-          applyIn(n, el.in, p);                       // slide-kit elements
+        } else if (kit) {
+          if (el.in === 'type') typeIn(item, raw); else applyIn(n, el.in, p);
         }
+        if (el.named.opacity !== undefined && n) n.style.opacity = (n.style.opacity === '' ? 1 : n.style.opacity) * el.named.opacity;
       });
     });
+  }
+  // How slide i leaves. out=fade: it fades away over its last 0.45 s. out=none: it holds to its end. Not said: it holds
+  // when the next slide has an arriving move of its own (that move replaces it) and fades otherwise. The last slide of
+  // a finished piece holds.
+  function fades(i) {
+    if (i === scenes.length - 1 && !loopMode) return 'none';
+    return scenes[i].sc.out || (scenes[i + 1] && scenes[i + 1].tin ? 'none' : 'fade');
   }
 
   // Player: one clock, fully scrubbable, deterministic for frame-by-frame capture.
@@ -861,7 +1042,7 @@
   const loopMode = !!M.loop || q.get('loop') === '1';
   // Presentation mode: each slide has a settled moment (its "stop"). Click or a key plays the next build at full speed;
   // pressing again mid-build finishes it; going back is an instant seek because every frame is a function of t.
-  const stops = scenes.map(({ sc, items }) => Math.min(sc.start + Math.max(0.6, ...items.map(i => i.el.at + i.el.dur)) + 0.2, sc.end - 0.5));
+  const stops = scenes.map(({ sc, items, tin }) => Math.min(sc.start + Math.max(0.6, tin, ...items.map(i => i.el.at + i.el.dur)) + 0.2, sc.end - 0.5));
   let cur = 0, target = presentMode ? stops[0] : null;
   function tick(now) {
     if (playing) {
@@ -879,7 +1060,7 @@
   function next() {
     if (playing) return settle();                                  // finish the running build first
     if (cur >= scenes.length - 1) return;
-    t = Math.max(t, M.scenes[cur].end - 0.45);                      // skip the idle hold, play exit + next entrance
+    t = Math.max(t, M.scenes[cur].end - (fades(cur) === 'fade' ? 0.45 : 0));   // skip the idle hold, play exit + next entrance
     cur++; target = stops[cur]; playing = true; last = null;
   }
   function goto(i) { cur = clamp(i, 0, scenes.length - 1); target = stops[cur]; playing = false; seek(target); }

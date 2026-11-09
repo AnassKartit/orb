@@ -4,7 +4,8 @@
 // Every CommonJS module under src/ that the compiler reaches is copied into a function and served by a small
 // require(). The Node modules they ask for are replaced by stand-ins written below: a file system that lives in
 // memory (it holds what the compiler reads while it runs: the page template, the player runtime, the standard
-// library, the bundled sound effects), a posix path, sha256 and a child_process that explains why it cannot run.
+// library, the bundled sound effects), a posix path, sha256 and a child_process that can only say how long a
+// video is and explains why it runs nothing else.
 // The stand-ins are ordinary functions in this file; their source is copied into the bundle.
 //
 //   node scripts/build-playground.js        writes playground/orb-compiler.js
@@ -26,6 +27,9 @@ const SAMPLES = [
   ['Presentation', 'playground/examples/deck.orb'],
   ['Chart written in Orb', 'examples/std/charts-demo.orb'],
   ['Kinetic captions', 'examples/std/short-demo.orb'],
+  ['Make it yours: colours, fonts, tags, a framed picture', 'playground/examples/customise.orb'],
+  ['Four characters, one rig', 'examples/cartoon/cast.orb'],
+  ['Deck looks: backgrounds, transitions, builds', 'playground/examples/deck-looks.orb'],
 ];
 const countLines = text => text.split('\n').filter(line => line.trim()).length;
 // Files the samples use. They start out in the folder a source builds from, like a file the visitor added.
@@ -187,11 +191,13 @@ function makeApi(load, fs, samples, lengths) {
       const { html, files, motion } = web.build(source, { workDir: OUT, baseDir: WORK, media, onWarning: message => warnings.push(message) });
       const waiting = media === false ? [...new Set([...html.matchAll(/data-orb-src="([^"]+)"/g)].map(m => m[1]))] : [];
       return { kind: 'video', html, warnings, media: Object.fromEntries(waiting.map(name => [name, { bytes: files[name], type: web.mime(name, files[name]) }])),
-        width: motion.width, height: motion.height, duration: motion.duration, present: false };
+        width: motion.width, height: motion.height, duration: motion.duration, present: false,
+        map: JSON.parse(fs.readFileSync(OUT + '/orb-map.json', 'utf8')) };   // item id -> source line, and each item's box
     } catch (error) { throw explain(error); }
   }
   return {
     samples,
+    fonts: Object.keys(web.WEB_FONTS),   // the named families a video page can load
     fs,        // the in-memory file system: a file written under /work can be used by a source
     lengths,   // video path -> seconds. Filled by the page from the file itself; read when a looping video is built
     isPlayer: source => web.isPlayer('', source),
@@ -200,6 +206,12 @@ function makeApi(load, fs, samples, lengths) {
     // The same page for a preview: pictures, video and audio are left out of the HTML and listed in `media`
     // ({ name: { bytes, type } }), for the page to hand over as object URLs.
     preview: source => make(source, false),
+    // Read a source without building it: throws what build() would throw for a word, an option or a value the
+    // compiler does not take. Cheap enough to ask "would this option be accepted here?".
+    check(source) {
+      try { if (web.isPlayer('', source)) prism.parse(source, { baseDir: WORK }); else hf.parse(source, { baseDir: WORK }); }
+      catch (error) { throw explain(error); }
+    },
     // The file after `orb expand`: every def, repeat, if and import written out.
     expand(source) {
       try { return (web.isPlayer('', source) ? lang.expand(source, { dialect: 'player', baseDir: WORK }) : hf.expandSource(source, { baseDir: WORK })).text; }
